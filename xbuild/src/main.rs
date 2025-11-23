@@ -27,6 +27,7 @@ fn main() -> Result<()> {
         "build-std",
         "-Z",
         "trim-paths",
+        "-r",
     ];
 
     cargo.args(args);
