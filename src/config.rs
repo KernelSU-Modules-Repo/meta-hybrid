@@ -6,7 +6,7 @@ use std::{
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-const CONFIG_FILE_DEFAULT: &str = "/data/adb/magic_mount/config.toml";
+pub const CONFIG_FILE_DEFAULT: &str = "/data/adb/magic_mount/config.toml";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {

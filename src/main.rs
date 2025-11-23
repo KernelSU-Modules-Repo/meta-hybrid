@@ -6,9 +6,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use config::Config;
-
-const CONFIG_FILE_DEFAULT: &str = "/data/adb/magic_mount/config.toml";
+use config::{CONFIG_FILE_DEFAULT, Config};
 
 #[derive(Parser, Debug)]
 #[command(name = "magic_mount", version, about = "Magic Mount Metamodule")]
