@@ -331,7 +331,8 @@ button:active { transform: scale(0.96); }
 .log-info { color: #58a6ff; }
 .log-warn { color: #d29922; }
 .log-error { color: #f85149; }
-.log-debug { color: #8b949e; }
+.log-debug { color: #3fc070; }
+.log-wrapper { color: #58a6ff; }
 
 /* Modules List */
 .rules-list { display: flex; flex-direction: column; gap: 12px; }
