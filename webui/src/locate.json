@@ -34,7 +34,7 @@
     "modules": {
       "title": "Module Modes",
       "desc": "Choose 'Magic Mount' if a module causes bootloops or issues with OverlayFS.",
-      "modeAuto": "Auto (OverlayFS)",
+      "modeAuto": "OverlayFS",
       "modeMagic": "Magic Mount",
       "scanning": "Scanning...",
       "reload": "Refresh",
@@ -91,7 +91,7 @@
     "modules": {
       "title": "模块模式",
       "desc": "如果模块导致无限重启或 OverlayFS 异常，请尝试切换为 Magic Mount。",
-      "modeAuto": "自动 (OverlayFS)",
+      "modeAuto": "OverlayFS",
       "modeMagic": "Magic Mount",
       "scanning": "扫描中...",
       "reload": "刷新",
@@ -111,6 +111,120 @@
       "empty": "日志为空",
       "readFailed": "读取失败",
       "readException": "读取异常"
+    }
+  },
+  "ja": {
+    "common": {
+      "appName": "Hybrid Mount",
+      "saving": "保存中...",
+      "theme": "テーマ切り替え",
+      "language": "言語"
+    },
+    "lang": { "display": "日本語" },
+    "tabs": {
+      "config": "設定",
+      "modules": "モジュール",
+      "logs": "ログ"
+    },
+    "config": {
+      "title": "設定",
+      "verboseLabel": "詳細ログ",
+      "verboseOff": "オフ",
+      "verboseOn": "オン",
+      "moduleDir": "モジュールディレクトリ",
+      "tempDir": "一時ディレクトリ",
+      "mountSource": "マウントソース",
+      "logFile": "ログファイル",
+      "partitions": "パーティション",
+      "autoPlaceholder": "自動",
+      "reload": "再読み込み",
+      "save": "保存",
+      "loadSuccess": "設定を読み込みました",
+      "loadError": "設定の読み込みに失敗しました",
+      "loadDefault": "デフォルト設定を使用します",
+      "saveSuccess": "保存しました",
+      "saveFailed": "保存に失敗しました"
+    },
+    "modules": {
+      "title": "モジュールモード",
+      "desc": "OverlayFSでブートループや問題が発生する場合は、「Magic Mount」を選択してください。",
+      "modeAuto": "OverlayFS",
+      "modeMagic": "Magic Mount",
+      "scanning": "スキャン中...",
+      "reload": "更新",
+      "save": "モードを保存",
+      "empty": "有効なモジュールが見つかりません",
+      "scanError": "モジュールのスキャンに失敗しました",
+      "saveSuccess": "モードを保存しました",
+      "saveFailed": "モードの保存に失敗しました"
+    },
+    "logs": {
+      "title": "システムログ",
+      "select": "ファイル",
+      "current": "現在",
+      "old": "以前",
+      "loading": "ログを読み込み中...",
+      "refresh": "更新",
+      "empty": "ログは空です",
+      "readFailed": "読み込み失敗",
+      "readException": "ログ読み込みエラー"
+    }
+  },
+  "ru": {
+    "common": {
+      "appName": "Hybrid Mount",
+      "saving": "Сохранение...",
+      "theme": "Тема",
+      "language": "Язык"
+    },
+    "lang": { "display": "Русский" },
+    "tabs": {
+      "config": "Конфиг",
+      "modules": "Модули",
+      "logs": "Логи"
+    },
+    "config": {
+      "title": "Конфигурация",
+      "verboseLabel": "Подробный лог",
+      "verboseOff": "Выкл.",
+      "verboseOn": "Вкл.",
+      "moduleDir": "Путь модулей",
+      "tempDir": "Временная папка",
+      "mountSource": "Источник монтирования",
+      "logFile": "Файл лога",
+      "partitions": "Разделы",
+      "autoPlaceholder": "Авто",
+      "reload": "Обновить",
+      "save": "Сохранить",
+      "loadSuccess": "Конфигурация загружена",
+      "loadError": "Ошибка загрузки конфига",
+      "loadDefault": "Конфиг по умолчанию",
+      "saveSuccess": "Успешно сохранено",
+      "saveFailed": "Ошибка сохранения"
+    },
+    "modules": {
+      "title": "Режимы модулей",
+      "desc": "Выберите 'Magic Mount', если модуль вызывает bootloop или проблемы с OverlayFS.",
+      "modeAuto": "OverlayFS",
+      "modeMagic": "Magic Mount",
+      "scanning": "Сканирование...",
+      "reload": "Обновить",
+      "save": "Сохранить",
+      "empty": "Активные модули не найдены",
+      "scanError": "Ошибка сканирования модулей",
+      "saveSuccess": "Режимы сохранены",
+      "saveFailed": "Ошибка сохранения режимов"
+    },
+    "logs": {
+      "title": "Системные логи",
+      "select": "Файл",
+      "current": "Текущий",
+      "old": "Предыдущий",
+      "loading": "Загрузка логов...",
+      "refresh": "Обновить",
+      "empty": "Лог пуст",
+      "readFailed": "Ошибка чтения",
+      "readException": "Ошибка при чтении лога"
     }
   }
 }
