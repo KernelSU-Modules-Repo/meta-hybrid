@@ -285,7 +285,7 @@ fn run() -> Result<()> {
     config.merge_with_cli(cli.moduledir, cli.tempdir, cli.mountsource, cli.verbose, cli.partitions);
 
     utils::init_logger(config.verbose, Path::new(defs::DAEMON_LOG_FILE))?;
-    log::info!("Hybrid Mount Starting...");
+    log::info!("Hybrid Mount Starting (True Hybrid Mode)...");
 
     // 1. Prepare Storage (The Smart Fallback)
     let mnt_base = Path::new(defs::MODULE_CONTENT_DIR); // /data/adb/meta-hybrid/mnt/
@@ -303,7 +303,7 @@ fn run() -> Result<()> {
         log::error!("Critical: Failed to sync modules: {:#}", e);
     }
 
-    // 3. Scan & Group (Proceeds with existing logic using 'mnt' as source)
+    // 3. Scan & Group Modules
     let module_modes = config::load_module_modes();
     let mut active_modules: HashMap<String, PathBuf> = HashMap::new();
     
@@ -318,9 +318,12 @@ fn run() -> Result<()> {
     }
     log::info!("Loaded {} modules from storage ({})", active_modules.len(), storage_mode);
 
-    // 4. Partition Grouping
-    let mut partition_map: HashMap<String, Vec<PathBuf>> = HashMap::new();
-    let mut magic_force_map: HashMap<String, bool> = HashMap::new();
+    // 4. Partition Grouping (Separated by Mode)
+    // We no longer force a partition to be exclusive to Magic Mount.
+    // Instead, we maintain separate lists for Overlay and Magic per partition context.
+    
+    let mut partition_overlay_map: HashMap<String, Vec<PathBuf>> = HashMap::new();
+    let mut magic_mount_modules: HashSet<PathBuf> = HashSet::new();
     
     let mut all_partitions = BUILTIN_PARTITIONS.to_vec();
     let extra_parts: Vec<&str> = config.partitions.iter().map(|s| s.as_str()).collect();
@@ -330,59 +333,55 @@ fn run() -> Result<()> {
         let mode = module_modes.get(&module_id).map(|s| s.as_str()).unwrap_or("auto");
         let is_magic = mode == "magic";
 
-        for &part in &all_partitions {
-            let part_dir = content_path.join(part);
-            if part_dir.is_dir() {
-                partition_map.entry(part.to_string())
-                    .or_default()
-                    .push(content_path.clone()); 
-                
-                if is_magic {
-                    magic_force_map.insert(part.to_string(), true);
-                    log::info!("Partition /{} forced to Magic Mount by module '{}'", part, module_id);
+        if is_magic {
+            // If module is set to Magic mode, add it to the magic list.
+            // magic_mount::mount_partitions will handle finding which partitions it touches.
+            magic_mount_modules.insert(content_path.clone());
+            log::info!("Module '{}' assigned to Magic Mount", module_id);
+        } else {
+            // If module is Auto (Overlay), check which partitions it affects and add to overlay map.
+            for &part in &all_partitions {
+                let part_dir = content_path.join(part);
+                if part_dir.is_dir() {
+                    partition_overlay_map.entry(part.to_string())
+                        .or_default()
+                        .push(content_path.clone());
                 }
             }
         }
     }
 
-    // 5. Execute Mounts
-    // Use robust select_temp_dir
-    let tempdir = if let Some(t) = &config.tempdir { t.clone() } else { utils::select_temp_dir()? };
-    let mut magic_modules: HashSet<PathBuf> = HashSet::new();
-
-    // First pass: OverlayFS
-    for (part, modules) in &partition_map {
-        let use_magic = *magic_force_map.get(part).unwrap_or(&false);
-        if !use_magic {
-            let target_path = format!("/{}", part);
-            let overlay_paths: Vec<String> = modules.iter()
-                .map(|m| m.join(part).display().to_string())
-                .collect();
-            
-            log::info!("Mounting {} [OVERLAY] ({} layers)", target_path, overlay_paths.len());
-            if let Err(e) = overlay_mount::mount_overlay(&target_path, &overlay_paths, None, None) {
-                log::error!("OverlayFS mount failed for {}: {:#}, falling back to Magic Mount", target_path, e);
-                magic_force_map.insert(part.to_string(), true);
+    // 5. Execute Mounts - True Hybrid Strategy
+    // Strategy: First mount OverlayFS layers, then mount Magic Mount layers on top.
+    
+    // 5.1 First pass: OverlayFS
+    for (part, modules) in &partition_overlay_map {
+        let target_path = format!("/{}", part);
+        let overlay_paths: Vec<String> = modules.iter()
+            .map(|m| m.join(part).display().to_string())
+            .collect();
+        
+        log::info!("Mounting {} [OVERLAY] ({} layers)", target_path, overlay_paths.len());
+        if let Err(e) = overlay_mount::mount_overlay(&target_path, &overlay_paths, None, None) {
+            log::error!("OverlayFS mount failed for {}: {:#}. Trying fallback...", target_path, e);
+            // If OverlayFS fails, we must fallback these modules to Magic Mount for this partition.
+            for m in modules {
+                magic_mount_modules.insert(m.clone());
             }
         }
     }
 
-    // Second pass: Magic Mount
-    for (part, _) in &partition_map {
-        if *magic_force_map.get(part).unwrap_or(&false) {
-            if let Some(mods) = partition_map.get(part) {
-                for m in mods {
-                    magic_modules.insert(m.clone());
-                }
-            }
-        }
-    }
+    // 5.2 Second pass: Magic Mount
+    // This will mount over the existing system (which might already be overlay-ed).
+    // This effectively stacks Magic Mount ON TOP OF OverlayFS, achieving Hybrid Mount.
+    if !magic_mount_modules.is_empty() {
+        // Use robust select_temp_dir
+        let tempdir = if let Some(t) = &config.tempdir { t.clone() } else { utils::select_temp_dir()? };
 
-    if !magic_modules.is_empty() {
-        log::info!("Starting Magic Mount Engine...");
+        log::info!("Starting Magic Mount Engine for {} modules...", magic_mount_modules.len());
         utils::ensure_temp_dir(&tempdir).context(format!("Failed to create temp dir at {}", tempdir.display()))?;
         
-        let module_list: Vec<PathBuf> = magic_modules.into_iter().collect();
+        let module_list: Vec<PathBuf> = magic_mount_modules.into_iter().collect();
         
         if let Err(e) = magic_mount::mount_partitions(
             &tempdir, 
