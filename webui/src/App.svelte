@@ -8,7 +8,7 @@
     moduledir: '/data/adb/modules',
     tempdir: '',
     mountsource: 'KSU',
-    logfile: '/data/adb/magic_mount/mm.log',
+    umount: true,
     verbose: false,
     partitions: []
   };
@@ -136,6 +136,9 @@
         case 'debug':
           result.verbose = isTrueValue(value);
           break;
+        case 'umount':
+          result.umount = isTrueValue(value);
+          break;
         case 'partitions':
           result.partitions = value
             .split(',')
@@ -167,6 +170,8 @@ function serializeKvConfig(cfg) {
   }
 
   lines.push(`mount_source=${q(cfg.mountsource || DEFAULT_CONFIG.mountsource)}`);
+
+  lines.push(`umount=${cfg.umount ? 'true' : 'false'}`);
 
   const logFile = cfg.logfile || DEFAULT_CONFIG.logfile;
   lines.push(`log_file=${q(logFile)}`);
@@ -509,6 +514,26 @@ function serializeKvConfig(cfg) {
                 on:click|preventDefault={() => (config.verbose = true)}
               >
                 {L.config.verboseOn}
+              </button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="umount-setting">{L.config.umountLabel}</label>
+            <div class="loglevel-switch" id="umount-setting" role="group">
+              <button
+                type="button"
+                class="lv-btn {!config.umount ? 'active' : ''}"
+                on:click|preventDefault={() => (config.umount = false)}
+              >
+                {L.config.umountOff}
+              </button>
+              <button
+                type="button"
+                class="lv-btn {config.umount ? 'active' : ''}"
+                on:click|preventDefault={() => (config.umount = true)}
+              >
+                {L.config.umountOn}
               </button>
             </div>
           </div>
