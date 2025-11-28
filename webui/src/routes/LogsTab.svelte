@@ -1,13 +1,17 @@
 <script>
   import { store } from '../lib/store.svelte';
   import { ICONS } from '../lib/constants';
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, onDestroy } from 'svelte';
   import Skeleton from '../components/Skeleton.svelte';
   import './LogsTab.css';
 
   let searchLogQuery = $state('');
   let filterLevel = $state('all'); // all, info, warn, error
-  let logContainer; // Reference to the DOM element
+  let logContainer;
+  
+  // Auto Refresh State
+  let autoRefresh = $state(false);
+  let refreshInterval;
 
   // Derived state: Filter logs based on search query and level
   let filteredLogs = $derived(store.logs.filter(line => {
@@ -24,16 +28,16 @@
 
   // Auto-scroll function
   async function scrollToBottom() {
-    if (logContainer) {
-      await tick(); // Wait for DOM update
+    if (logContainer && autoRefresh) { // Only auto-scroll if auto-refresh is on or initial load
+      await tick();
       logContainer.scrollTop = logContainer.scrollHeight;
     }
   }
 
   // Load logs and scroll
-  async function refreshLogs() {
-    await store.loadLogs();
-    scrollToBottom();
+  async function refreshLogs(silent = false) {
+    await store.loadLogs(silent);
+    if (!silent) scrollToBottom(); // Force scroll on manual refresh
   }
   
   // Actions
@@ -48,8 +52,25 @@
     }
   }
 
+  // Auto Refresh Effect
+  $effect(() => {
+    if (autoRefresh) {
+      refreshLogs(true); // Initial immediate refresh
+      refreshInterval = setInterval(() => {
+        refreshLogs(true); // Silent refresh
+      }, 3000);
+    } else {
+      if (refreshInterval) clearInterval(refreshInterval);
+    }
+    return () => { if (refreshInterval) clearInterval(refreshInterval); };
+  });
+
   onMount(() => {
-    refreshLogs();
+    refreshLogs(); // Initial load
+  });
+  
+  onDestroy(() => {
+    if (refreshInterval) clearInterval(refreshInterval);
   });
 </script>
 
@@ -64,6 +85,11 @@
     bind:value={searchLogQuery}
   />
   
+  <div style="display:flex; align-items:center; gap:6px; margin-right:8px;">
+    <input type="checkbox" id="auto-refresh" bind:checked={autoRefresh} style="accent-color: var(--md-sys-color-primary);" />
+    <label for="auto-refresh" style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); cursor: pointer; white-space: nowrap;">Auto</label>
+  </div>
+
   <div style="height: 16px; width: 1px; background: var(--md-sys-color-outline-variant); margin: 0 8px;"></div>
 
   <span style="font-size: 12px; color: var(--md-sys-color-on-surface-variant); white-space: nowrap;">
@@ -94,6 +120,10 @@
         <span class="log-{line.type}">{line.text}</span>
       </span>
     {/each}
+    
+    <div style="text-align: center; padding: 12px; font-size: 11px; opacity: 0.5; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 12px;">
+      — Showing last 1000 lines —
+    </div>
   {/if}
 </div>
 
@@ -102,7 +132,7 @@
     <svg viewBox="0 0 24 24" width="20" height="20"><path d={ICONS.copy} fill="currentColor"/></svg>
   </button>
   <div style="flex:1"></div>
-  <button class="btn-filled" onclick={refreshLogs} disabled={store.loading.logs}>
+  <button class="btn-filled" onclick={() => refreshLogs(false)} disabled={store.loading.logs}>
     <svg viewBox="0 0 24 24" width="18" height="18"><path d={ICONS.refresh} fill="currentColor"/></svg>
     {store.L.logs.refresh}
   </button>

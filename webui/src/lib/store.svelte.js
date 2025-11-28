@@ -25,13 +25,10 @@ export const store = $state({
 
   // Getters
   get L() {
-    // If locale is loaded, return it. Otherwise return a safe fallback or empty structure
-    // to prevent crashes during initial load.
     return this.loadedLocale || this.getFallbackLocale();
   },
 
-  // Helper for initial safe state (simplified English fallback)
-  // This prevents undefined errors before JSON is loaded
+  // Helper for initial safe state
   getFallbackLocale() {
     return {
         common: { appName: "Hybrid Mount", saving: "...", theme: "Theme", language: "Language" },
@@ -68,24 +65,21 @@ export const store = $state({
   },
 
   async setLang(code) {
-    // Check if locale file exists
     const path = `../locales/${code}.json`;
     if (localeModules[path]) {
       try {
         const mod = await localeModules[path]();
-        this.loadedLocale = mod.default; // JSON module default export
+        this.loadedLocale = mod.default; 
         this.lang = code;
         localStorage.setItem('mm-lang', code);
       } catch (e) {
         console.error(`Failed to load locale: ${code}`, e);
-        // Fallback to English if load fails
         if (code !== 'en') await this.setLang('en');
       }
     }
   },
 
   async init() {
-    // Load local storage
     const savedLang = localStorage.getItem('mm-lang') || 'en';
     await this.setLang(savedLang);
     
@@ -93,7 +87,6 @@ export const store = $state({
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     this.setTheme(savedTheme || (systemDark ? 'dark' : 'light'));
 
-    // Fetch system color
     const sysColor = await API.fetchSystemColor();
     if (sysColor) {
       this.seed = sysColor;
@@ -151,20 +144,31 @@ export const store = $state({
     this.saving.modules = false;
   },
 
-  async loadLogs() {
-    this.loading.logs = true;
-    this.logs = [];
+  async loadLogs(silent = false) {
+    if (!silent) this.loading.logs = true;
+    // Do not clear logs if silent refresh, to avoid flicker
+    if (!silent) this.logs = []; 
+    
     try {
-      const raw = await API.readLogs(this.config.logfile);
-      this.logs = raw.split('\n').map(line => {
-        let type = 'debug';
-        if (line.includes('[ERROR]')) type = 'error';
-        else if (line.includes('[WARN]')) type = 'warn';
-        else if (line.includes('[INFO]')) type = 'info';
-        return { text: line, type };
-      });
+      // Limit to 1000 lines
+      const raw = await API.readLogs(this.config.logfile, 1000);
+      
+      if (!raw) {
+        this.logs = [{ text: this.L.logs.empty, type: 'debug' }];
+      } else {
+        this.logs = raw.split('\n').map(line => {
+          let type = 'debug';
+          if (line.includes('[ERROR]')) type = 'error';
+          else if (line.includes('[WARN]')) type = 'warn';
+          else if (line.includes('[INFO]')) type = 'info';
+          return { text: line, type };
+        });
+      }
     } catch (e) {
-      this.logs = [{ text: this.L.logs.empty, type: 'debug' }];
+      // Show actual error instead of generic "Empty"
+      console.error(e);
+      this.logs = [{ text: `Error: ${e.message}`, type: 'error' }];
+      if (!silent) this.showToast(this.L.logs.readFailed, 'error');
     }
     this.loading.logs = false;
   },
