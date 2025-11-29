@@ -17,9 +17,13 @@ use std::fs;
 use anyhow::Result; // Removed unused `Context`
 use clap::Parser;
 use rustix::mount::{unmount, UnmountFlags};
+use mimalloc::MiMalloc;
 
 use cli::{Cli, Commands};
 use config::{Config, CONFIG_FILE_DEFAULT};
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 fn load_config(cli: &Cli) -> Result<Config> {
     if let Some(config_path) = &cli.config {
