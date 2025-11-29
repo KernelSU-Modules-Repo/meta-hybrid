@@ -59,22 +59,18 @@ jobs:
           name: meta-mm
           compression-level: 9
           path: output/artifact/
-      - name: Generate Change log
+      - name: Install git-cliff
+        run: |
+          curl -sSL https://github.com/orhun/git-cliff/releases/latest/download/git-cliff-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          sudo mv git-cliff /usr/local/bin/
+
+     - name: Generate Changelog
         run: |
           PROP_FILE="module/module.prop"
           VERSION=$(grep "^version=" "$PROP_FILE" | cut -d= -f2 | sed 's/-.*//')
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
-          echo "## $VERSION" > /tmp/changelog.md
-          echo "" >> /tmp/changelog.md
-          
-          if [ -z "$PREV_TAG" ]; then
-            echo "Initial release." >> /tmp/changelog.md
-            git log --pretty=format:"* %s" >> /tmp/changelog.md
-          else
-            echo "Changes since $PREV_TAG:" >> /tmp/changelog.md
-            git log --pretty=format:"* %s" "$PREV_TAG..HEAD" >> /tmp/changelog.md
-          fi
+          git-cliff "$PREV_TAG"..HEAD --tag "v$VERSION" -o /tmp/changelog.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
