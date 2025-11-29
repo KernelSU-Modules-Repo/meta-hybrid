@@ -17,12 +17,16 @@ use std::io::Write;
 
 use anyhow::{Context, Result};
 use env_logger::Builder;
+use mimalloc::MiMalloc;
 
 use crate::{
     config::Config,
     defs::{CONFIG_FILE_DEFAULT, DISABLE_FILE_NAME, REMOVE_FILE_NAME, SKIP_MOUNT_FILE_NAME},
     magic_mount::UMOUNT,
 };
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 fn load_config() -> Config {
     if let Ok(config) = Config::load_default() {
