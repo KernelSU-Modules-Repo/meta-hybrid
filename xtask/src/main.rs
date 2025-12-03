@@ -37,6 +37,12 @@ impl Arch {
             Arch::Riscv64 => "riscv64",
         }
     }
+    fn api_level(&self) -> &'static str {
+        match self {
+            Arch::Riscv64 => "35",
+            _ => "29",
+        }
+    }
 }
 
 #[derive(Parser)]
@@ -69,28 +75,35 @@ fn main() -> Result<()> {
 
 fn build(release: bool, arch: Arch) -> Result<()> {
     let cargo = env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
-    
-    let status = Command::new("rustup")
-        .args(["target", "add", arch.target()])
-        .status()
-        .context("Failed to add rust target")?;
+    if !matches!(arch, Arch::Riscv64) {
+        let status = Command::new("rustup")
+            .args(["target", "add", arch.target()])
+            .status()
+            .context("Failed to add rust target")?;
 
-    if !status.success() {
-        eprintln!("Warning: Failed to auto-install target {}", arch.target());
+        if !status.success() {
+            eprintln!("Warning: Failed to auto-install target {}", arch.target());
+        }
     }
+    let mut cmd = Command::new(&cargo);
+    
+    cmd.arg("ndk")
+       .arg("-t").arg(arch.target())
+       .arg("-p").arg(arch.api_level());
 
-    let mut cmd = Command::new(cargo);
-    cmd.arg("build")
-        .arg("--target")
-        .arg(arch.target());
+    cmd.arg("build");
+    if matches!(arch, Arch::Riscv64) {
+        cmd.arg("-Z").arg("build-std");
+        cmd.arg("--target").arg(arch.target());
+    }
 
     if release {
         cmd.arg("--release");
     }
 
-    let status = cmd.status().context("Failed to run cargo build")?;
+    let status = cmd.status().context("Failed to run cargo ndk build")?;
     if !status.success() {
-        anyhow::bail!("Cargo build failed");
+        anyhow::bail!("Build failed");
     }
 
     Ok(())
