@@ -3,6 +3,7 @@ use log::{info, warn};
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::ffi::CString;
 
 use procfs::process::Process;
 use rustix::{fd::AsFd, fs::CWD, mount::*};
@@ -150,12 +151,13 @@ fn do_mount_overlay(
         if let (Some(upperdir), Some(workdir)) = (upperdir_s, workdir_s) {
             data = format!("{data},upperdir={upperdir},workdir={workdir}");
         }
+        let data_c = CString::new(data).map_err(|e| anyhow::anyhow!("Invalid string for mount data: {}", e))?;
         mount(
             KSU_OVERLAY_SOURCE,
             dest.as_ref(),
             "overlay",
             MountFlags::empty(),
-            data,
+            Some(data_c.as_c_str()),
         ).map_err(|mount_err| anyhow::anyhow!("Legacy mount failed: {} (fsopen error: {})", mount_err, fsopen_err))?;
     }
     

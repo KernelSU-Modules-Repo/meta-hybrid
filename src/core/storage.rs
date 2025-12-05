@@ -82,10 +82,9 @@ fn setup_ext4_image(target: &Path, image_path: &Path) -> Result<String> {
 
     // 2. Chown 0:0 (Root:Root)
     use rustix::fs::{chown, Uid, Gid};
-    unsafe {
-        chown(target, Some(Uid::from_raw(0)), Some(Gid::from_raw(0)))
-            .context("Failed to chown storage root")?;
-    }
+    
+    chown(target, Some(Uid::from_raw(0)), Some(Gid::from_raw(0)))
+        .context("Failed to chown storage root")?;
 
     // 3. Restore SELinux Context
     utils::lsetfilecon(target, "u:object_r:system_file:s0")

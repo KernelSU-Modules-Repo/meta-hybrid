@@ -173,7 +173,8 @@ pub fn is_xattr_supported(path: &Path) -> bool {
 
 pub fn mount_tmpfs(target: &Path) -> Result<()> {
     ensure_dir_exists(target)?;
-    mount("tmpfs", target, "tmpfs", MountFlags::empty(), "mode=0755")
+    let data = CString::new("mode=0755")?;
+    mount("tmpfs", target, "tmpfs", MountFlags::empty(), Some(data.as_c_str()))
         .context("Failed to mount tmpfs")?;
     Ok(())
 }
