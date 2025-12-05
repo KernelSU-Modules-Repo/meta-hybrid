@@ -21,7 +21,7 @@
         <Skeleton width="100px" height="20px" />
         <Skeleton width="60px" height="32px" />
       </div>
-      <div class="progress-track" style="background: transparent;">
+      <div class="progress-track progress-track-skeleton">
         <Skeleton width="100%" height="8px" borderRadius="4px" />
       </div>
       <div class="storage-details">
@@ -30,7 +30,7 @@
       </div>
     {:else}
       <div class="storage-header">
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div class="storage-title-group">
           <span class="storage-title">{store.L.status.storageTitle}</span>
           {#if store.storage.type && store.storage.type !== 'unknown'}
             <span class="storage-type-badge {store.storage.type === 'tmpfs' ? 'type-tmpfs' : 'type-ext4'}">
@@ -74,7 +74,7 @@
   </div>
 
   <div class="mode-card">
-    <div class="storage-title" style="margin-bottom: 12px;">{store.L.status.activePartitions}</div>
+    <div class="mode-title">{store.L.status.activePartitions}</div>
     <div class="partition-grid">
       {#if store.loading.status}
         {#each Array(4) as _}
@@ -91,7 +91,7 @@
   </div>
 
   <div class="mode-card">
-    <div class="storage-title" style="margin-bottom: 12px;">{store.L.status.sysInfoTitle}</div>
+    <div class="mode-title">{store.L.status.sysInfoTitle}</div>
     <div class="info-grid">
       <div class="info-item">
         <span class="info-label">{store.L.status.kernel}</span>
@@ -121,14 +121,14 @@
   </div>
 
   <div class="mode-card">
-    <div class="storage-title" style="margin-bottom: 8px;">{store.L.status.modeStats}</div>
+    <div class="mode-title" style="margin-bottom: 8px;">{store.L.status.modeStats}</div>
     {#if store.loading.status}
-      <div style="display:flex; flex-direction:column; gap: 12px;">
-        <div style="display:flex; justify-content:space-between;">
+      <div class="skeleton-group">
+        <div class="skeleton-row">
           <Skeleton width="80px" height="20px" />
           <Skeleton width="30px" height="20px" />
         </div>
-        <div style="display:flex; justify-content:space-between;">
+        <div class="skeleton-row">
           <Skeleton width="80px" height="20px" />
           <Skeleton width="30px" height="20px" />
         </div>
@@ -141,7 +141,7 @@
         </div>
         <span class="mode-count">{store.modeStats.auto}</span>
       </div>
-      <div style="height: 1px; background-color: var(--md-sys-color-outline-variant); opacity: 0.5;"></div>
+      <div class="mode-divider"></div>
       <div class="mode-row">
         <div class="mode-name">
           <div class="dot" style="background-color: var(--md-sys-color-tertiary)"></div>
@@ -154,7 +154,7 @@
 </div>
 
 <div class="bottom-actions">
-  <div style="flex:1"></div>
+  <div class="spacer"></div>
   <button 
     class="btn-tonal" 
     onclick={() => store.loadStatus()} 

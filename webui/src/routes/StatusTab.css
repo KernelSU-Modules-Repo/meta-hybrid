@@ -18,6 +18,11 @@
   justify-content: space-between;
   align-items: baseline;
 }
+.storage-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .storage-title {
   font-size: 14px;
   font-weight: 500;
@@ -28,16 +33,15 @@
   font-weight: 400;
   font-family: var(--md-ref-typeface-mono);
 }
-.storage-unit {
-  font-size: 16px;
-  opacity: 0.6;
-}
 .progress-track {
   height: 8px;
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   overflow: hidden;
   width: 100%;
+}
+.progress-track-skeleton {
+  background: transparent;
 }
 .progress-fill {
   height: 100%;
@@ -102,6 +106,12 @@
   flex-direction: column;
   gap: 12px;
 }
+.mode-title {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+}
 .mode-row {
   display: flex;
   align-items: center;
@@ -122,6 +132,20 @@
 .mode-count {
   font-weight: 500;
   color: var(--md-sys-color-on-surface);
+}
+.mode-divider {
+  height: 1px; 
+  background-color: var(--md-sys-color-outline-variant); 
+  opacity: 0.5;
+}
+.skeleton-row {
+  display: flex; 
+  justify-content: space-between;
+}
+.skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .info-grid {
   display: flex;
@@ -160,7 +184,7 @@
   gap: 8px;
 }
 .part-chip {
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
@@ -195,3 +219,8 @@
   background-color: var(--md-sys-color-secondary);
   color: var(--md-sys-color-on-secondary);
 }
+.spacer {
+  flex: 1;
+}
+.skel-mt-8 { margin-top: 8px; }
+.skel-mt-4 { margin-top: 4px; }

@@ -105,9 +105,7 @@
         onclick={() => onTabChange(tab.id)}
         bind:this={tabRefs[tab.id]}
       >
-        <div class="nav-icon-container">
-          <svg viewBox="0 0 24 24"><path d={tab.icon}/></svg>
-        </div>
+        <svg viewBox="0 0 24 24"><path d={tab.icon}/></svg>
         <span>{store.L.tabs[tab.id]}</span>
       </button>
     {/each}

@@ -8,6 +8,10 @@
   padding: 8px 16px;
   box-shadow: var(--md-sys-elevation-1);
 }
+.log-search-icon {
+  fill: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
 .log-search-input {
   flex: 1;
   border: none;
@@ -23,14 +27,44 @@
   color: var(--md-sys-color-on-surface-variant);
   opacity: 0.7;
 }
+.log-auto-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+}
+.log-auto-checkbox {
+  accent-color: var(--md-sys-color-primary);
+  width: 16px; 
+  height: 16px;
+}
+.log-auto-label {
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.log-divider {
+  height: 16px;
+  width: 1px;
+  background: var(--md-sys-color-outline-variant);
+  margin: 0 8px;
+}
+.log-filter-label {
+  font-size: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+  white-space: nowrap;
+}
 .log-filter-select {
   background: transparent;
   border: none;
   color: var(--md-sys-color-primary);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   outline: none;
   cursor: pointer;
+  padding-left: 4px;
 }
 .log-container {
   background-color: var(--md-sys-color-surface-container-highest);
@@ -48,6 +82,11 @@
   scroll-behavior: smooth;
   box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
 }
+.log-skeleton-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .log-entry {
   margin-bottom: 4px;
   line-height: 1.5;
@@ -58,3 +97,48 @@
 .log-warn { color: var(--md-sys-color-tertiary); }
 .log-debug { color: var(--md-sys-color-secondary); opacity: 0.8; }
 .log-error { color: var(--md-sys-color-error); font-weight: 600; }
+
+.log-empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  opacity: 0.6;
+}
+.log-footer {
+  text-align: center;
+  padding: 12px;
+  font-size: 11px;
+  opacity: 0.5;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  margin-top: 12px;
+}
+.scroll-fab {
+  position: sticky;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  box-shadow: var(--md-sys-elevation-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 10;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.scroll-fab:active {
+  transform: translateX(-50%) scale(0.95);
+}
+.scroll-icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+.spacer {
+  flex: 1;
+}
