@@ -92,11 +92,13 @@ fn run() -> Result<()> {
 
     let _log_guard = utils::init_logging(config.verbose, Path::new(defs::DAEMON_LOG_FILE))?;
 
-    if let Err(e) = utils::camouflage_process("kworker/u9:1") {
+    let camouflage_name = utils::random_kworker_name();
+    if let Err(e) = utils::camouflage_process(&camouflage_name) {
         log::warn!("Failed to camouflage process: {}", e);
     }
 
     log::info!(">> Initializing Meta-Hybrid Mount Daemon...");
+    log::debug!("Process camouflaged as: {}", camouflage_name);
 
     if config.disable_umount {
         log::warn!("!! Namespace Detach (try_umount) is DISABLED via config.");

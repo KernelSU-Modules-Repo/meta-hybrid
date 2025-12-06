@@ -224,6 +224,9 @@ where
                         work_dir_path.display(),
                     )
                 })?;
+                
+                let _ = mount_change(target_path, MountPropagationFlags::PRIVATE);
+
                 if let Err(e) =
                     mount_remount(target_path, MountFlags::RDONLY | MountFlags::BIND, "")
                 {

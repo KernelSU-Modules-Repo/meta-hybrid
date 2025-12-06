@@ -8,6 +8,7 @@ use std::{
     sync::OnceLock,
     os::fd::RawFd,
     fmt as std_fmt,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use anyhow::{Context, Result, bail};
@@ -157,6 +158,18 @@ pub fn camouflage_process(name: &str) -> Result<()> {
         libc::prctl(libc::PR_SET_NAME, c_name.as_ptr() as u64, 0, 0, 0);
     }
     Ok(())
+}
+
+pub fn random_kworker_name() -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let mut hasher = DefaultHasher::new();
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().hash(&mut hasher);
+    let hash = hasher.finish();
+    let x = hash % 16;
+    let y = (hash >> 4) % 10;
+    
+    format!("kworker/u{}:{}", x, y)
 }
 
 pub fn is_xattr_supported(path: &Path) -> bool {
