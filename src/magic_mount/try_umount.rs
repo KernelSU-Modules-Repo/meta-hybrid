@@ -17,20 +17,6 @@ struct KsuAddTryUmount {
     mode: u8,
 }
 
-fn grab_fd() -> i32 {
-    let mut fd = -1;
-    unsafe {
-        libc::syscall(
-            libc::SYS_reboot,
-            KSU_INSTALL_MAGIC1,
-            KSU_INSTALL_MAGIC2,
-            0,
-            &mut fd,
-        );
-    };
-    fd
-}
-
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn send_unmountable<P>(target: P) -> Result<()>
 where
@@ -44,8 +30,20 @@ where
         flags: 2,
         mode: 1,
     };
-    #[allow(clippy::redundant_closure)]
-    let fd = *DRIVER_FD.get_or_init(|| grab_fd());
+
+    let fd = *DRIVER_FD.get_or_init(|| {
+        let mut fd = -1;
+        unsafe {
+            libc::syscall(
+                libc::SYS_reboot,
+                KSU_INSTALL_MAGIC1,
+                KSU_INSTALL_MAGIC2,
+                0,
+                &mut fd,
+            );
+        };
+        fd
+    });
 
     unsafe {
         #[cfg(target_env = "gnu")]
