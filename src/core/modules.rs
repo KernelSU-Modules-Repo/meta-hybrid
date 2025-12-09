@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use serde::Serialize;
 use crate::{conf::config, defs, core::state};
+use crate::core::policy::{ModuleSettings, PartitionConfig};
 
 pub struct ModuleFile {
     pub real_path: PathBuf,
@@ -43,7 +44,10 @@ struct ModuleInfo {
     version: String,
     author: String,
     description: String,
-    mode: String,
+    // Expanded to support granular config
+    config: PartitionConfig,
+    // List of partitions actually found in the module directory
+    detected_partitions: Vec<String>,
 }
 
 fn read_prop(path: &Path, key: &str) -> Option<String> {
@@ -116,7 +120,9 @@ pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: 
 }
 
 pub fn print_list(config: &config::Config) -> Result<()> {
-    let module_modes = config::load_module_modes();
+    // Load the new granular settings
+    let settings = ModuleSettings::load(defs::MODULE_SETTINGS_FILE).unwrap_or_default();
+    
     let modules_dir = &config.moduledir;
     let mut modules = Vec::new();
 
@@ -128,29 +134,56 @@ pub fn print_list(config: &config::Config) -> Result<()> {
     }
 
     if modules_dir.exists() {
-        for entry in fs::read_dir(modules_dir)? {
-            let entry = entry?;
+        // Sort directories to ensure consistent output
+        let mut entries: Vec<_> = fs::read_dir(modules_dir)?
+            .filter_map(|e| e.ok())
+            .collect();
+        entries.sort_by_key(|e| e.file_name());
+
+        for entry in entries {
             let path = entry.path();
             if !path.is_dir() { continue; }
             let id = entry.file_name().to_string_lossy().to_string();
+            
             if id == "meta-hybrid" || id == "lost+found" { continue; }
-            if path.join(defs::DISABLE_FILE_NAME).exists() || path.join(defs::REMOVE_FILE_NAME).exists() || path.join(defs::SKIP_MOUNT_FILE_NAME).exists() { continue; }
+            if path.join(defs::DISABLE_FILE_NAME).exists() || 
+               path.join(defs::REMOVE_FILE_NAME).exists() || 
+               path.join(defs::SKIP_MOUNT_FILE_NAME).exists() { 
+                continue; 
+            }
 
-            let has_content = defs::BUILTIN_PARTITIONS.iter().any(|p| {
+            // Detect partitions in the module
+            let mut detected_partitions = Vec::new();
+            for &p in defs::BUILTIN_PARTITIONS {
                 let p_src = path.join(p);
+                // Also check runtime mount point to see if it's active
                 let p_dst = mnt_base.join(&id).join(p);
-                (p_src.exists() && has_files_recursive(&p_src)) || 
-                (p_dst.exists() && has_files_recursive(&p_dst))
-            });
+                
+                if (p_src.exists() && has_files_recursive(&p_src)) || 
+                   (p_dst.exists() && has_files_recursive(&p_dst)) {
+                    detected_partitions.push(p.to_string());
+                }
+            }
 
-            if has_content {
+            if !detected_partitions.is_empty() {
                 let prop_path = path.join("module.prop");
                 let name = read_prop(&prop_path, "name").unwrap_or_else(|| id.clone());
                 let version = read_prop(&prop_path, "version").unwrap_or_default();
                 let author = read_prop(&prop_path, "author").unwrap_or_default();
                 let description = read_prop(&prop_path, "description").unwrap_or_default();
-                let mode = module_modes.get(&id).cloned().unwrap_or_else(|| "auto".to_string());
-                modules.push(ModuleInfo { id, name, version, author, description, mode });
+                
+                // Retrieve the specific config for this module
+                let module_config = settings.modules.get(&id).cloned().unwrap_or_default();
+
+                modules.push(ModuleInfo { 
+                    id, 
+                    name, 
+                    version, 
+                    author, 
+                    description, 
+                    config: module_config,
+                    detected_partitions 
+                });
             }
         }
     }

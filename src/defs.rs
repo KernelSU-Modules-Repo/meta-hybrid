@@ -8,6 +8,8 @@ pub const STATE_FILE: &str = "/data/adb/meta-hybrid/run/daemon_state.json";
 
 pub const DAEMON_LOG_FILE: &str = "/data/adb/meta-hybrid/daemon.log";
 
+pub const MODULE_SETTINGS_FILE: &str = "/data/adb/meta-hybrid/module_settings.json";
+
 pub const DISABLE_FILE_NAME: &str = "disable";
 pub const REMOVE_FILE_NAME: &str = "remove";
 pub const SKIP_MOUNT_FILE_NAME: &str = "skip_mount";
