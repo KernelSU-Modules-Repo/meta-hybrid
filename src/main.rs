@@ -21,6 +21,7 @@ use core::{
     storage,
     sync,
     modules,
+    policy,
 };
 
 #[global_allocator]
@@ -90,6 +91,7 @@ fn run() -> Result<()> {
         cli.partitions.clone(),
         cli.dry_run,
     );
+    let settings = policy::ModuleSettings::load().unwrap_or_default();
 
     if config.dry_run {
         env_logger::builder()
@@ -106,8 +108,11 @@ fn run() -> Result<()> {
         log::info!(">> simulating storage setup (skipped)");
         log::info!(">> Planning mount strategy using source files...");
         
-        let plan = planner::generate(&config, &module_list, &config.moduledir)?;
-        plan.print_visuals();
+        let plan = planner::generate(&module_list, &settings)?;
+        
+        log::info!(">> Overlay Targets: {:?}", plan.overlay_targets);
+        log::info!(">> Magic Targets: {:?}", plan.magic_targets);
+        log::info!(">> Hymo Targets: {:?}", plan.hymo_targets);
         
         log::info!(">> Dry-run complete. Exiting.");
         return Ok(());
@@ -140,13 +145,9 @@ fn run() -> Result<()> {
 
     sync::perform_sync(&module_list, &storage_handle.mount_point)?;
 
-    let plan = planner::generate(&config, &module_list, &storage_handle.mount_point)?;
-    plan.print_visuals();
+    let plan = planner::generate(&module_list, &settings)?;
 
-    let active_mounts: Vec<String> = plan.overlay_ops
-        .iter()
-        .map(|op| op.partition_name.clone())
-        .collect();
+    let active_mounts: Vec<String> = plan.overlay_targets.keys().cloned().collect();
 
     log::info!(">> Link Start! Executing mount plan...");
     let exec_result = executor::execute(&plan, &config)?;

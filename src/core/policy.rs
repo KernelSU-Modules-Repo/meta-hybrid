@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
+use crate::defs;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -43,8 +43,9 @@ pub struct ModuleSettings {
 }
 
 impl ModuleSettings {
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let path = path.as_ref();
+    /// Loads settings from the default configuration file.
+    pub fn load() -> Result<Self> {
+        let path = std::path::Path::new(defs::MODULE_SETTINGS_FILE);
         if !path.exists() {
             return Ok(Self::default());
         }
@@ -55,8 +56,9 @@ impl ModuleSettings {
         Ok(settings)
     }
 
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let path = path.as_ref();
+    /// Saves the current settings to the default configuration file.
+    pub fn save(&self) -> Result<()> {
+        let path = std::path::Path::new(defs::MODULE_SETTINGS_FILE);
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }

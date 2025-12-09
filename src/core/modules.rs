@@ -44,9 +44,7 @@ struct ModuleInfo {
     version: String,
     author: String,
     description: String,
-    // Expanded to support granular config
     config: PartitionConfig,
-    // List of partitions actually found in the module directory
     detected_partitions: Vec<String>,
 }
 
@@ -120,8 +118,8 @@ pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: 
 }
 
 pub fn print_list(config: &config::Config) -> Result<()> {
-    // Load the new granular settings
-    let settings = ModuleSettings::load(defs::MODULE_SETTINGS_FILE).unwrap_or_default();
+    // Automatically load settings via policy module
+    let settings = ModuleSettings::load().unwrap_or_default();
     
     let modules_dir = &config.moduledir;
     let mut modules = Vec::new();
@@ -134,7 +132,6 @@ pub fn print_list(config: &config::Config) -> Result<()> {
     }
 
     if modules_dir.exists() {
-        // Sort directories to ensure consistent output
         let mut entries: Vec<_> = fs::read_dir(modules_dir)?
             .filter_map(|e| e.ok())
             .collect();
@@ -152,11 +149,9 @@ pub fn print_list(config: &config::Config) -> Result<()> {
                 continue; 
             }
 
-            // Detect partitions in the module
             let mut detected_partitions = Vec::new();
             for &p in defs::BUILTIN_PARTITIONS {
                 let p_src = path.join(p);
-                // Also check runtime mount point to see if it's active
                 let p_dst = mnt_base.join(&id).join(p);
                 
                 if (p_src.exists() && has_files_recursive(&p_src)) || 
@@ -172,7 +167,6 @@ pub fn print_list(config: &config::Config) -> Result<()> {
                 let author = read_prop(&prop_path, "author").unwrap_or_default();
                 let description = read_prop(&prop_path, "description").unwrap_or_default();
                 
-                // Retrieve the specific config for this module
                 let module_config = settings.modules.get(&id).cloned().unwrap_or_default();
 
                 modules.push(ModuleInfo { 
