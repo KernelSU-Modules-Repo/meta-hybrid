@@ -1,9 +1,22 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use serde::{Deserialize, Serialize};
 use anyhow::{Context, Result};
-use crate::defs::MountMode;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MountMode {
+    Auto,
+    Overlay,
+    Magic,
+}
+
+impl Default for MountMode {
+    fn default() -> Self {
+        Self::Auto
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartitionConfig {
