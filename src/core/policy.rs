@@ -19,6 +19,17 @@ impl Default for MountMode {
     }
 }
 
+impl std::fmt::Display for MountMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MountMode::Auto => write!(f, "auto"),
+            MountMode::Overlay => write!(f, "overlay"),
+            MountMode::Magic => write!(f, "magic"),
+            MountMode::Hymo => write!(f, "hymofs"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PartitionConfig {
     #[serde(default)]

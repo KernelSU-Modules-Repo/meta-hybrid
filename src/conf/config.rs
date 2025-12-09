@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
@@ -8,7 +7,6 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 pub const CONFIG_FILE_DEFAULT: &str = "/data/adb/meta-hybrid/config.toml";
-pub const MODULE_MODE_FILE: &str = "/data/adb/meta-hybrid/module_mode.conf";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
@@ -115,17 +113,4 @@ impl Config {
         if !partitions.is_empty() { self.partitions = partitions; }
         if dry_run { self.dry_run = true; }
     }
-}
-
-pub fn load_module_modes() -> HashMap<String, String> {
-    let mut modes = HashMap::new();
-    if let Ok(content) = fs::read_to_string(MODULE_MODE_FILE) {
-        for line in content.lines() {
-            if line.trim().starts_with('#') { continue; }
-            if let Some((id, mode)) = line.split_once('=') {
-                modes.insert(id.trim().to_string(), mode.trim().to_lowercase());
-            }
-        }
-    }
-    modes
 }

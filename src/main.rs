@@ -80,7 +80,7 @@ fn run() -> Result<()> {
                 let module_list: Vec<ModuleDTO> = serde_json::from_slice(&json_bytes)
                     .context("Failed to parse modules JSON")?;
 
-                let mut settings = policy::ModuleSettings::default();
+                let mut settings = policy::ModuleSettings::load().unwrap_or_default();
                 settings.import_from_list(module_list);
                 settings.save()?;
                 
@@ -118,7 +118,7 @@ fn run() -> Result<()> {
         log::info!(":: DRY-RUN MODE ACTIVE ::");
         log::info!("No file system changes will be made.");
 
-        let module_list = inventory::scan(&config.moduledir, &config)?;
+        let module_list = inventory::scan(&config.moduledir, &config, &settings)?;
         log::info!(">> Inventory Scan: Found {} enabled modules.", module_list.len());
 
         log::info!(">> simulating sync (skipped)");
@@ -157,7 +157,7 @@ fn run() -> Result<()> {
     let storage_handle = storage::setup(&mnt_base, &img_path, config.force_ext4)?;
     log::info!(">> Storage Backend: [{}]", storage_handle.mode.to_uppercase());
 
-    let module_list = inventory::scan(&config.moduledir, &config)?;
+    let module_list = inventory::scan(&config.moduledir, &config, &settings)?;
     log::info!(">> Inventory Scan: Found {} enabled modules.", module_list.len());
 
     sync::perform_sync(&module_list, &storage_handle.mount_point)?;
