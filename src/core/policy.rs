@@ -36,6 +36,12 @@ impl Default for PartitionConfig {
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ModuleDTO {
+    pub id: String,
+    pub config: PartitionConfig,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ModuleSettings {
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
@@ -43,7 +49,6 @@ pub struct ModuleSettings {
 }
 
 impl ModuleSettings {
-    /// Loads settings from the default configuration file.
     pub fn load() -> Result<Self> {
         let path = std::path::Path::new(defs::MODULE_SETTINGS_FILE);
         if !path.exists() {
@@ -56,7 +61,6 @@ impl ModuleSettings {
         Ok(settings)
     }
 
-    /// Saves the current settings to the default configuration file.
     pub fn save(&self) -> Result<()> {
         let path = std::path::Path::new(defs::MODULE_SETTINGS_FILE);
         if let Some(parent) = path.parent() {
@@ -88,6 +92,15 @@ impl ModuleSettings {
             }
             None => {
                 config.default_mode = mode;
+            }
+        }
+    }
+
+    pub fn import_from_list(&mut self, list: Vec<ModuleDTO>) {
+        for item in list {
+            self.set_mode(item.id.clone(), None, item.config.default_mode);
+            for (part, mode) in item.config.partitions {
+                self.set_mode(item.id.clone(), Some(part), mode);
             }
         }
     }

@@ -21,7 +21,7 @@ use core::{
     storage,
     sync,
     modules,
-    policy,
+    policy::{self, ModuleDTO},
 };
 
 #[global_allocator]
@@ -68,6 +68,23 @@ fn run() -> Result<()> {
                 
                 config.save_to_file(CONFIG_FILE_DEFAULT)?;
                 println!("Configuration saved successfully.");
+                return Ok(());
+            },
+            Commands::SaveModules { payload } => {
+                let json_bytes = (0..payload.len())
+                    .step_by(2)
+                    .map(|i| u8::from_str_radix(&payload[i..i + 2], 16))
+                    .collect::<Result<Vec<u8>, _>>()
+                    .context("Failed to decode hex payload")?;
+
+                let module_list: Vec<ModuleDTO> = serde_json::from_slice(&json_bytes)
+                    .context("Failed to parse modules JSON")?;
+
+                let mut settings = policy::ModuleSettings::default();
+                settings.import_from_list(module_list);
+                settings.save()?;
+                
+                println!("Module settings saved successfully.");
                 return Ok(());
             },
             Commands::Storage => { 
