@@ -34,6 +34,14 @@ export const MockAPI = {
         author: 'Google',
         description: 'Changes system colors.',
         mode: 'auto',
+      },
+      {
+        id: 'hymoFS_module_3',
+        name: 'System UI Overlay',
+        version: '2.5',
+        author: 'Google',
+        description: 'Changes system colors.',
+        mode: 'hymofs',
       }
     ];
   },
