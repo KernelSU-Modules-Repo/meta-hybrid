@@ -6,6 +6,7 @@
   import Skeleton from '../components/Skeleton.svelte';
   import BottomActions from '../components/BottomActions.svelte';
   import './ModulesTab.css';
+  import type { MountMode } from '../lib/types';
 
   let searchQuery = $state('');
   let filterType = $state('all');
@@ -16,32 +17,29 @@
   onMount(() => {
     load();
   });
-
   function load() {
     store.loadModules().then(() => {
-        initialModulesStr = JSON.stringify(store.modules.map(m => ({ id: m.id, mode: m.mode })));
+        initialModulesStr = JSON.stringify(store.modules.map(m => m.config));
     });
   }
 
   let isDirty = $derived.by(() => {
     if (!initialModulesStr) return false;
-    const current = JSON.stringify(store.modules.map(m => ({ id: m.id, mode: m.mode })));
+    const current = JSON.stringify(store.modules.map(m => m.config));
     return current !== initialModulesStr;
   });
-
   function save() {
     store.saveModules().then(() => {
-        initialModulesStr = JSON.stringify(store.modules.map(m => ({ id: m.id, mode: m.mode })));
+        initialModulesStr = JSON.stringify(store.modules.map(m => m.config));
     });
   }
 
   let filteredModules = $derived(store.modules.filter(m => {
     const q = searchQuery.toLowerCase();
     const matchSearch = m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
-    const matchFilter = filterType === 'all' || m.mode === filterType;
+    const matchFilter = filterType === 'all' || m.config.default_mode === filterType;
     return matchSearch && matchFilter;
   }));
-
   function toggleExpand(id: string) {
     expandedId = expandedId === id ? null : id;
   }
@@ -53,10 +51,27 @@
     }
   }
 
-  function getModeLabel(mode: string) {
+  function getModeLabel(mode: MountMode) {
       if (mode === 'magic') return store.L.modules.modeMagic;
-      if (mode === 'hymofs') return "HymoFS";
+      if (mode === 'hymo') return "HymoFS";
       return store.L.modules.modeAuto;
+  }
+
+  function getPartitionMode(moduleId: string, partition: string): string {
+      const module = store.modules.find(m => m.id === moduleId);
+      return module?.config.partitions[partition] || 'inherit';
+  }
+
+  function setPartitionMode(moduleId: string, partition: string, mode: string) {
+      const module = store.modules.find(m => m.id === moduleId);
+      if (!module) return;
+
+      if (mode === 'inherit') {
+          delete module.config.partitions[partition];
+      } else {
+          module.config.partitions[partition] = mode as MountMode;
+      }
+      module.config = { ...module.config };
   }
 </script>
 
@@ -81,7 +96,7 @@
       <option value="auto">{store.L.modules.modeAuto}</option>
       <option value="magic">{store.L.modules.modeMagic}</option>
       {#if store.storage?.hymofs_available}
-        <option value="hymofs">HymoFS</option>
+        <option value="hymo">HymoFS</option>
       {/if}
     </select>
   </div>
@@ -124,10 +139,10 @@
             </div>
           </div>
           
-          <div class="mode-badge {mod.mode === 'magic' ? 'badge-magic' : mod.mode === 'hymofs' ? 'badge-hymofs' : 'badge-auto'}"
-               style:background-color={mod.mode === 'hymofs' ? 'var(--md-sys-color-primary-container)' : ''}
-               style:color={mod.mode === 'hymofs' ? 'var(--md-sys-color-on-primary-container)' : ''}>
-            {getModeLabel(mod.mode)}
+          <div class="mode-badge {mod.config.default_mode === 'magic' ? 'badge-magic' : mod.config.default_mode === 'hymo' ? 'badge-hymofs' : 'badge-auto'}"
+               style:background-color={mod.config.default_mode === 'hymo' ? 'var(--md-sys-color-primary-container)' : ''}
+               style:color={mod.config.default_mode === 'hymo' ? 'var(--md-sys-color-on-primary-container)' : ''}>
+            {getModeLabel(mod.config.default_mode)}
           </div>
         </div>
         
@@ -137,22 +152,48 @@
             <p class="module-meta">Author: {mod.author || 'Unknown'}</p>
             
             <div class="config-section">
-              <div class="config-row">
-                <span class="config-label">{store.L.config.title}:</span>
+              <div class="config-row main-config">
+                <span class="config-label"><strong>{store.L.common.default}:</strong></span>
                 <div class="text-field compact-select">
                   <select 
-                    bind:value={mod.mode}
+                    bind:value={mod.config.default_mode}
                     onclick={(e) => e.stopPropagation()}
                     onkeydown={(e) => e.stopPropagation()}
                   >
                     <option value="auto">{store.L.modules.modeAuto}</option>
                     <option value="magic">{store.L.modules.modeMagic}</option>
                     {#if store.storage?.hymofs_available}
-                      <option value="hymofs">HymoFS</option>
+                      <option value="hymo">HymoFS</option>
                     {/if}
                   </select>
                 </div>
               </div>
+
+              {#if mod.detected_partitions && mod.detected_partitions.length > 0}
+                <div class="partition-list">
+                  <p class="sub-label">{store.L.config.partitionOverrides}:</p>
+                  {#each mod.detected_partitions as part}
+                    <div class="config-row sub-config">
+                      <span class="config-label partition-name">{part}</span>
+                      <div class="text-field compact-select">
+                        <select 
+                          value={getPartitionMode(mod.id, part)}
+                          onchange={(e) => setPartitionMode(mod.id, part, e.currentTarget.value)}
+                          onclick={(e) => e.stopPropagation()}
+                          onkeydown={(e) => e.stopPropagation()}
+                        >
+                          <option value="inherit">Inherit (Default)</option>
+                          <option value="auto">{store.L.modules.modeAuto}</option>
+                          <option value="magic">{store.L.modules.modeMagic}</option>
+                          {#if store.storage?.hymofs_available}
+                            <option value="hymo">HymoFS</option>
+                          {/if}
+                        </select>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
             </div>
 
           </div>

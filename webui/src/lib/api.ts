@@ -1,7 +1,7 @@
 import { DEFAULT_CONFIG, PATHS } from './constants';
 import { APP_VERSION } from './constants_gen';
 import { MockAPI } from './api.mock';
-import type { AppConfig, Module, StorageStatus, SystemInfo, DeviceInfo } from './types';
+import type { AppConfig, Module, StorageStatus, SystemInfo, DeviceInfo, PartitionConfig } from './types';
 
 interface KsuExecResult {
   errno: number;
@@ -96,21 +96,30 @@ const RealAPI = {
     return [];
   },
 
+  // Updated to save granular settings
   saveModules: async (modules: Module[]): Promise<void> => {
     if (!ksuExec) throw new Error("No KSU environment");
-    let content = "# Module Modes\n";
-    modules.forEach(m => { 
-      if (m.mode !== 'auto' && /^[a-zA-Z0-9_.-]+$/.test(m.id)) {
-        content += `${m.id}=${m.mode}\n`; 
-      }
+
+    // Convert flat Module array to ModuleSettings structure: { modules: { id: config } }
+    const settingsMap: Record<string, PartitionConfig> = {};
+    modules.forEach(m => {
+      settingsMap[m.id] = m.config;
     });
+
+    const payload = {
+      modules: settingsMap
+    };
+
+    const jsonStr = JSON.stringify(payload, null, 2);
+    // Escape single quotes for shell safety
+    const safeJson = jsonStr.replace(/'/g, "'\\''");
     
-    const data = content.replace(/'/g, "'\\''");
-    const modeConfigPath = "/data/adb/meta-hybrid/module_mode.conf";
-    const cmd = `mkdir -p "$(dirname "${modeConfigPath}")" && printf '%s\n' '${data}' > "${modeConfigPath}"`;
+    const settingsPath = "/data/adb/meta-hybrid/module_settings.json";
+    // Use simple echo to write file, ensuring directory exists
+    const cmd = `mkdir -p "$(dirname "${settingsPath}")" && echo '${safeJson}' > "${settingsPath}"`;
     
-    const { errno } = await ksuExec(cmd);
-    if (errno !== 0) throw new Error('Failed to save modes');
+    const { errno, stderr } = await ksuExec(cmd);
+    if (errno !== 0) throw new Error(`Failed to save module settings: ${stderr}`);
   },
 
   readLogs: async (logPath?: string, lines = 1000): Promise<string> => {

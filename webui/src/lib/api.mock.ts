@@ -1,110 +1,128 @@
-import { APP_VERSION } from './constants_gen';
 import { DEFAULT_CONFIG } from './constants';
-import type { AppConfig, DeviceInfo, Module, StorageStatus, SystemInfo } from './types';
+import type { AppConfig, Module, StorageStatus, SystemInfo, DeviceInfo } from './types';
 
-// Mock delay to simulate network latency
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const DELAY_MS = 600;
+
+function delay<T>(data: T): Promise<T> {
+  return new Promise(resolve => setTimeout(() => resolve(data), DELAY_MS));
+}
 
 export const MockAPI = {
-  async loadConfig(): Promise<AppConfig> {
-    await delay(300);
-    return { ...DEFAULT_CONFIG };
+  loadConfig: async (): Promise<AppConfig> => {
+    return delay(DEFAULT_CONFIG);
   },
 
-  async saveConfig(config: AppConfig): Promise<void> {
-    await delay(500);
-    console.log('[Mock] Config saved:', config);
+  saveConfig: async (config: AppConfig): Promise<void> => {
+    console.log('[Mock] Saving config:', config);
+    return delay(undefined);
   },
 
-  async scanModules(dir: string): Promise<Module[]> {
-    await delay(600);
-    return [
+  scanModules: async (): Promise<Module[]> => {
+    // Generate dummy modules with the NEW granular structure
+    const modules: Module[] = [
       {
         id: 'magisk_module_1',
-        name: 'Example Module',
+        name: 'Awesome Mod',
         version: '1.0.0',
-        author: 'Developer',
-        description: 'This is a mock module for testing.',
-        mode: 'magic',
+        author: 'Developer A',
+        description: 'A simple module that does magic stuff',
+        config: {
+          default_mode: 'auto',
+          partitions: {}
+        },
+        detected_partitions: ['system']
       },
       {
-        id: 'overlay_module_2',
-        name: 'System UI Overlay',
-        version: '2.5',
-        author: 'Google',
-        description: 'Changes system colors.',
-        mode: 'auto',
+        id: 'fix_vendor_bug',
+        name: 'Vendor Fixer',
+        version: '2.1',
+        author: 'Fixer B',
+        description: 'Fixes specific vendor partition issues.',
+        config: {
+          default_mode: 'magic', // Simulating a saved setting
+          partitions: {
+            'vendor': 'magic'
+          }
+        },
+        detected_partitions: ['vendor', 'odm']
       },
       {
-        id: 'hymoFS_module_3',
-        name: 'System UI Overlay',
-        version: '2.5',
-        author: 'Google',
-        description: 'Changes system colors.',
-        mode: 'hymofs',
+        id: 'complex_overlay',
+        name: 'UI Themer',
+        version: 'v12',
+        author: 'Themer C',
+        description: 'Replaces system UI assets via OverlayFS.',
+        config: {
+          default_mode: 'overlay',
+          partitions: {}
+        },
+        detected_partitions: ['product', 'system_ext']
+      },
+      {
+        id: 'hymo_test_module',
+        name: 'HymoFS Test',
+        version: '0.9-beta',
+        author: 'Hymo Dev',
+        description: 'Testing HymoFS injection on specific paths.',
+        config: {
+          default_mode: 'hymo',
+          partitions: {
+            'system': 'overlay' // Mixed mode test
+          }
+        },
+        detected_partitions: ['system', 'vendor']
       }
     ];
+    return delay(modules);
   },
 
-  async saveModules(modules: Module[]): Promise<void> {
-    await delay(400);
-    console.log('[Mock] Modules saved:', modules);
+  saveModules: async (modules: Module[]): Promise<void> => {
+    console.log('[Mock] Saving granular module settings:', JSON.stringify(modules, null, 2));
+    return delay(undefined);
   },
 
-  async readLogs(): Promise<string> {
-    await delay(200);
-    return `[I] Daemon started at ${new Date().toISOString()}
-[I] Loading config from /data/adb/meta-hybrid/config.toml
-[D] Scanning modules...
-[I] Found 2 modules
-[W] OverlayFS is not supported on this kernel, falling back to Magic Mount
-[E] Failed to mount /system/app/TestApp: No such file or directory
-[I] Daemon ready`;
+  readLogs: async (): Promise<string> => {
+    return delay(`[INFO] Daemon started\n[INFO] Storage: Tmpfs\n[WARN] Module 'fix_vendor_bug' fell back to Magic Mount\n[INFO] OverlayFS mounted for 3 modules\n[DEBUG] HymoFS injection active`);
   },
 
-  async getDeviceStatus(): Promise<DeviceInfo> {
-    await delay(300);
-    return {
-      model: 'Pixel 8 Pro (Mock)',
-      android: '14 (API 34)',
-      kernel: '5.15.110-android14-11',
-      selinux: 'Enforcing'
-    };
-  },
-
-  async getVersion(): Promise<string> {
-    await delay(100);
-    return APP_VERSION;
-  },
-
-  async getStorageUsage(): Promise<StorageStatus> {
-    await delay(300);
-    return {
-      used: '128 MB',
-      size: '1024 MB',
-      percent: '12.5%',
+  getStorageUsage: async (): Promise<StorageStatus> => {
+    return delay({
+      size: '8.0 GB',
+      used: '1.2 GB',
+      percent: '15%',
       type: 'tmpfs',
       hymofs_available: true
-    };
+    });
   },
 
-  async getSystemInfo(): Promise<SystemInfo> {
-    await delay(300);
-    return {
-      kernel: 'Linux localhost 5.15.0 #1 SMP PREEMPT',
+  getSystemInfo: async (): Promise<SystemInfo> => {
+    return delay({
+      kernel: '5.10.101-android12-9-ge6234 (Mock)',
       selinux: 'Enforcing',
-      mountBase: '/data/adb/meta-hybrid/mnt',
-      activeMounts: ['system', 'product']
-    };
+      mountBase: '/dev/loop10',
+      activeMounts: ['system', 'vendor', 'product']
+    });
   },
 
-  async fetchSystemColor(): Promise<string | null> {
-    await delay(100);
-    return '#8AB4F8';
+  getDeviceStatus: async (): Promise<DeviceInfo> => {
+    return delay({
+      model: 'Pixel 6 Pro (Mock)',
+      android: '13 (API 33)',
+      kernel: '5.10.101',
+      selinux: 'Enforcing'
+    });
   },
 
-  openLink(url: string): void {
+  getVersion: async (): Promise<string> => {
+    return delay("1.2.0-mock");
+  },
+
+  openLink: async (url: string): Promise<void> => {
     console.log('[Mock] Opening link:', url);
     window.open(url, '_blank');
+  },
+
+  fetchSystemColor: async (): Promise<string | null> => {
+    return delay('#6750A4'); 
   }
 };

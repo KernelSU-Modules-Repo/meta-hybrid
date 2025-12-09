@@ -16,15 +16,26 @@
   let activeTab = $state('status');
   let dragOffset = $state(0);
   let isDragging = $state(false);
+  let isAnim = $state(false);
   let containerWidth = $state(0);
   let touchStartX = 0;
   let touchStartY = 0;
   let isReady = $state(false);
+  let animTimer: any;
 
   const TABS = ['status', 'config', 'modules', 'logs', 'info'];
 
+  function triggerAnim() {
+    isAnim = true;
+    clearTimeout(animTimer);
+    animTimer = setTimeout(() => {
+      isAnim = false;
+    }, 350);
+  }
+
   function switchTab(id: string) {
     activeTab = id;
+    triggerAnim();
   }
 
   function handleTouchStart(e: TouchEvent) {
@@ -56,6 +67,8 @@
   function handleTouchEnd() {
     if (!isDragging) return;
     isDragging = false;
+    triggerAnim();
+
     const threshold = containerWidth * 0.33 || 80;
     const currentIndex = TABS.indexOf(activeTab);
     let nextIndex = currentIndex;
@@ -79,7 +92,6 @@
       isReady = true;
     }
   });
-
   let baseTranslateX = $derived(TABS.indexOf(activeTab) * -20);
 </script>
 
@@ -93,6 +105,7 @@
     <TopBar />
 
     <main class="main-content" 
+          class:animating={isDragging || isAnim}
           bind:clientWidth={containerWidth}
           ontouchstart={handleTouchStart} 
           ontouchmove={handleTouchMove}
@@ -130,5 +143,9 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  .main-content.animating .page-scroller {
+    overflow-y: hidden !important;
   }
 </style>

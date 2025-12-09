@@ -68,9 +68,15 @@ const createStore = () => {
   let modeStats = $derived.by((): ModeStats => {
     const stats = { auto: 0, magic: 0, hymofs: 0 };
     modules.forEach(m => {
-        if (m.mode === 'auto') stats.auto++;
-        else if (m.mode === 'magic') stats.magic++;
-        else if (m.mode === 'hymofs') stats.hymofs++;
+        const mode = m.mode || m.config?.default_mode || 'auto';
+        
+        if (mode === 'auto' || mode === 'overlay') {
+            stats.auto++;
+        } else if (mode === 'magic') {
+            stats.magic++;
+        } else if (mode === 'hymo' || mode === 'hymofs') {
+            stats.hymofs++;
+        }
     });
     return stats;
   });

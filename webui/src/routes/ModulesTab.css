@@ -1,35 +1,109 @@
+.desc-card {
+  margin-bottom: 16px;
+}
+
+.desc-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--md-sys-color-surface-container);
+  padding: 8px 16px;
+  border-radius: 24px;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.search-container:focus-within {
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-primary);
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+  fill: var(--md-sys-color-on-surface-variant);
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface);
+  font-size: 1rem;
+  outline: none;
+  min-width: 0;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+  border-left: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.filter-label-text {
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface-variant);
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .filter-label-text {
+    display: block;
+  }
+}
+
+.filter-select {
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  padding-right: 4px;
+}
+
 .rules-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-bottom: 24px;
+  padding-bottom: 80px;
 }
 
-/* Expressive List Item / Card */
 .rule-card {
   background: var(--md-sys-color-surface-container-low);
-  border-radius: 24px; /* Larger corners */
+  border-radius: 12px;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
-  border: none;
-  cursor: pointer;
-  position: relative;
+  transition: background-color 0.2s;
+  border: 1px solid transparent;
+  outline: none;
 }
 
-.rule-card:hover {
-  background: var(--md-sys-color-surface-container);
+.rule-card:focus-visible {
+  border-color: var(--md-sys-color-primary);
 }
 
 .rule-card.expanded {
   background: var(--md-sys-color-surface-container);
-  /* Optional: slightly distinct color for expanded state */
+  border-color: var(--md-sys-color-outline-variant);
 }
 
 .rule-main {
-  padding: 20px; /* More breathing room */
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  cursor: pointer;
   gap: 16px;
 }
 
@@ -44,14 +118,12 @@
 .info-col {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
 .module-name {
   font-weight: 500;
-  font-size: 16px;
-  line-height: 1.4;
   color: var(--md-sys-color-on-surface);
   white-space: nowrap;
   overflow: hidden;
@@ -59,180 +131,125 @@
 }
 
 .module-id {
-  font-size: 13px;
+  font-size: 0.8rem;
   color: var(--md-sys-color-on-surface-variant);
-  font-family: var(--md-ref-typeface-mono);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0.8;
+  font-family: monospace;
 }
 
 .version-tag {
-  opacity: 0.6;
-  margin-left: 8px;
-  font-size: 12px;
+  background: var(--md-sys-color-surface-container-high);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  font-size: 0.75rem;
 }
 
-/* Modern Chip-like Badges */
 .mode-badge {
-  font-size: 12px;
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  border-radius: 16px;
   font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 8px; /* Standard MD3 chip radius */
-  text-transform: none;
-  letter-spacing: 0;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  white-space: nowrap;
 }
 
 .badge-auto {
-  background-color: var(--md-sys-color-secondary-container);
+  background: var(--md-sys-color-secondary-container);
   color: var(--md-sys-color-on-secondary-container);
 }
 
 .badge-magic {
-  background-color: var(--md-sys-color-tertiary-container);
+  background: var(--md-sys-color-tertiary-container);
   color: var(--md-sys-color-on-tertiary-container);
 }
 
+.badge-hymofs {
+  /* Dynamic style applied inline or can be defined here if fixed */
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
 .rule-details {
-  padding: 0 20px 20px 20px;
-  border-top: 1px solid rgba(0,0,0,0.05); /* Very subtle divider */
+  padding: 0 16px 16px 16px;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  margin-top: -8px;
+  padding-top: 16px;
 }
 
 .module-desc {
-  margin: 16px 0 12px 0;
-  font-size: 15px;
+  font-size: 0.9rem;
   color: var(--md-sys-color-on-surface-variant);
-  line-height: 1.6;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
 }
 
 .module-meta {
-  margin: 0;
-  font-size: 13px;
+  font-size: 0.8rem;
   color: var(--md-sys-color-outline);
-  font-family: var(--md-ref-typeface-mono);
+  margin: 0;
 }
 
+/* Config Section Styles (extracted) */
 .config-section {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px dashed var(--md-sys-color-outline-variant);
+  margin-top: 12px;
+  background: var(--md-sys-color-surface-container-low);
+  padding: 12px;
+  border-radius: 8px;
 }
 
 .config-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
-.config-label {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--md-sys-color-on-surface);
-}
-
-.compact-select {
-  width: 160px;
+.config-row:last-child {
   margin-bottom: 0;
 }
 
-.compact-select input, 
+.main-config {
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.partition-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sub-label {
+  font-size: 0.85rem;
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.sub-config {
+  padding-left: 8px;
+}
+
+.partition-name {
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
 .compact-select select {
-  height: 48px;
-  border-radius: 12px;
+  padding: 4px 24px 4px 8px;
+  font-size: 0.9rem;
+  height: 32px;
 }
 
-/* Expressive Search Bar */
-.search-container {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-  background-color: var(--md-sys-color-surface-container-high);
-  /* Full Pill Shape */
-  border-radius: 9999px; 
-  padding: 0 24px;
-  /* Taller search bar */
-  height: 64px; 
-  box-shadow: none;
-  transition: background-color 0.2s;
-}
-
-.search-container:focus-within {
-  background-color: var(--md-sys-color-surface-container-highest);
-}
-
-.search-icon {
-  width: 24px;
-  height: 24px;
-  fill: var(--md-sys-color-on-surface);
-  flex-shrink: 0;
-}
-
-.search-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  height: 100%;
-  font-size: 16px;
-  color: var(--md-sys-color-on-surface);
-  outline: none;
-  min-width: 0;
-}
-
-.search-input::placeholder {
+.empty-state {
+  text-align: center;
+  padding: 48px 0;
   color: var(--md-sys-color-on-surface-variant);
-  opacity: 0.7;
-}
-
-.filter-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.filter-label-text {
-  font-size: 13px;
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-.filter-select {
-  background: transparent;
-  border: none;
-  color: var(--md-sys-color-primary);
-  font-size: 14px;
-  font-weight: 600;
-  outline: none;
-  padding-right: 4px;
-  cursor: pointer;
-  height: 100%;
-}
-
-.desc-card {
-  padding: 16px;
-}
-
-.desc-text {
-  margin: 0;
-  font-size: 14px;
-  color: var(--md-sys-color-on-surface-variant);
-  line-height: 1.5;
 }
 
 .skeleton-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 48px 24px;
-  opacity: 0.6;
+  gap: 6px;
+  flex: 1;
 }

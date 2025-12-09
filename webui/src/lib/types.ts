@@ -11,15 +11,28 @@ export interface AppConfig {
   logfile?: string;
 }
 
+export type MountMode = 'auto' | 'overlay' | 'magic' | 'hymo';
+
+export interface PartitionConfig {
+  default_mode: MountMode;
+  partitions: Record<string, MountMode>;
+}
+
 export interface Module {
   id: string;
   name: string;
   version: string;
   author: string;
   description: string;
-  mode: 'auto' | 'magic' | 'hymofs';
+  config: PartitionConfig;
+  detected_partitions: string[];
+  
   enabled?: boolean;
   source_path?: string;
+  
+  // 👇👇👇 修复：添加 mode 属性 👇👇👇
+  // 添加 mode 属性以解决 store.svelte.ts 中的报错
+  mode?: string; 
 }
 
 export interface StorageStatus {
