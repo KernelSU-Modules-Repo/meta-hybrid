@@ -78,7 +78,7 @@ fn has_files_recursive(path: &Path) -> bool {
     false
 }
 
-pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: usize, magic_count: usize) {
+pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: usize, magic_count: usize, hymo_count: usize) {
     let path = Path::new(defs::MODULE_PROP_FILE);
     if !path.exists() { 
         log::warn!("module.prop not found at {}, skipping description update", path.display());
@@ -90,9 +90,9 @@ pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: 
     
     let nuke_str = if nuke_active { " | 肉垫: 开启 ✨" } else { "" };
     
-    let new_desc = format!(
-        "description=😋 运行中喵～ ({}) {} | Overlay: {} | Magic: {}{}", 
-        mode_str, status_emoji, overlay_count, magic_count, nuke_str
+    let desc_text = format!(
+        "description=😋 运行中喵～ ({}) {} | Hymo: {} | Overlay: {} | Magic: {}{}", 
+        mode_str, status_emoji, hymo_count, overlay_count, magic_count, nuke_str
     );
 
     let mut new_lines = Vec::new();
@@ -100,7 +100,7 @@ pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: 
         Ok(content) => {
             for line in content.lines() {
                 if line.starts_with("description=") {
-                    new_lines.push(new_desc.clone());
+                    new_lines.push(desc_text.clone());
                 } else {
                     new_lines.push(line.to_string());
                 }
@@ -108,7 +108,7 @@ pub fn update_description(storage_mode: &str, nuke_active: bool, overlay_count: 
             if let Err(e) = fs::write(path, new_lines.join("\n")) {
                 log::error!("Failed to update module.prop: {}", e);
             } else {
-                log::info!("Updated module.prop description (Meow!).");
+                log::info!("Updated module.prop description.");
             }
         },
         Err(e) => log::error!("Failed to read module.prop: {}", e),

@@ -11,20 +11,39 @@ pub struct OverlayOperation {
     pub lowerdirs: Vec<PathBuf>,
 }
 
+#[derive(Debug)]
+pub struct HymoOperation {
+    pub module_id: String,
+    pub source: PathBuf,
+    pub target: PathBuf,
+}
+
 #[derive(Debug, Default)]
 pub struct MountPlan {
     pub overlay_ops: Vec<OverlayOperation>,
+    pub hymo_ops: Vec<HymoOperation>,
     pub magic_module_paths: Vec<PathBuf>,
     
     pub overlay_module_ids: Vec<String>,
+    pub hymo_module_ids: Vec<String>,
     pub magic_module_ids: Vec<String>,
 }
 
 impl MountPlan {
     pub fn print_visuals(&self) {
-        if self.overlay_ops.is_empty() && self.magic_module_paths.is_empty() {
+        if self.overlay_ops.is_empty() && self.magic_module_paths.is_empty() && self.hymo_ops.is_empty() {
             log::info!(">> Empty plan. Standby mode.");
             return;
+        }
+
+        if !self.hymo_ops.is_empty() {
+            log::info!("[HymoFS Injection Protocol]");
+            let mut shown_modules = HashSet::new();
+            for op in &self.hymo_ops {
+                if shown_modules.insert(&op.module_id) {
+                    log::info!("├── [Inject] {}", op.module_id);
+                }
+            }
         }
 
         if !self.overlay_ops.is_empty() {
@@ -76,6 +95,7 @@ pub fn generate(
     let mut magic_paths = HashSet::new();
     let mut overlay_ids = HashSet::new();
     let mut magic_ids = HashSet::new();
+    let mut hymo_ids = HashSet::new();
 
     let mut target_partitions = defs::BUILTIN_PARTITIONS.to_vec();
     target_partitions.extend(config.partitions.iter().map(|s| s.as_str()));
@@ -85,33 +105,61 @@ pub fn generate(
         
         if module.mode == "magic" {
             content_path = module.source_path.clone();
-
             if has_meaningful_content(&content_path, &target_partitions) {
                 magic_paths.insert(content_path);
                 magic_ids.insert(module.id.clone());
             }
-        } else {
+            continue;
+        } 
+        
+        if module.mode == "hymofs" {
             if !content_path.exists() {
-                log::debug!("Planner: Module {} content missing in storage, skipping", module.id);
-                continue;
+                content_path = module.source_path.clone();
             }
 
-            let mut participates_in_overlay = false;
-
-            for part in &target_partitions {
-                let part_path = content_path.join(part);
-                
-                if part_path.is_dir() && has_files(&part_path) {
-                    partition_layers.entry(part.to_string())
-                        .or_default()
-                        .push(part_path);
-                    participates_in_overlay = true;
+            if content_path.exists() {
+                let mut has_hymo_content = false;
+                for part in &target_partitions {
+                    let part_src = content_path.join(part);
+                    let part_target = Path::new("/").join(part);
+                    
+                    if part_src.exists() && has_files(&part_src) {
+                        plan.hymo_ops.push(HymoOperation {
+                            module_id: module.id.clone(),
+                            source: part_src,
+                            target: part_target,
+                        });
+                        has_hymo_content = true;
+                    }
+                }
+                if has_hymo_content {
+                    hymo_ids.insert(module.id.clone());
                 }
             }
+            continue;
+        }
 
-            if participates_in_overlay {
-                overlay_ids.insert(module.id.clone());
+        // OverlayFS (Default/Auto)
+        if !content_path.exists() {
+            log::debug!("Planner: Module {} content missing in storage, skipping", module.id);
+            continue;
+        }
+
+        let mut participates_in_overlay = false;
+
+        for part in &target_partitions {
+            let part_path = content_path.join(part);
+            
+            if part_path.is_dir() && has_files(&part_path) {
+                partition_layers.entry(part.to_string())
+                    .or_default()
+                    .push(part_path);
+                participates_in_overlay = true;
             }
+        }
+
+        if participates_in_overlay {
+            overlay_ids.insert(module.id.clone());
         }
     }
 
@@ -145,9 +193,11 @@ pub fn generate(
     plan.magic_module_paths = magic_paths.into_iter().collect();
     plan.overlay_module_ids = overlay_ids.into_iter().collect();
     plan.magic_module_ids = magic_ids.into_iter().collect();
+    plan.hymo_module_ids = hymo_ids.into_iter().collect();
 
     plan.overlay_module_ids.sort();
     plan.magic_module_ids.sort();
+    plan.hymo_module_ids.sort();
 
     Ok(plan)
 }
