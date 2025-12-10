@@ -36,6 +36,15 @@ pub enum Commands {
         #[arg(long)]
         payload: String,
     },
+
+    #[command(name = "save-rules")]
+    SaveRules {
+        #[arg(long)]
+        module: String,
+        #[arg(long)]
+        payload: String,
+    },
+
     Storage,
     Modules,
 }

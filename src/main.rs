@@ -69,6 +69,24 @@ fn run() -> Result<()> {
                 println!("Configuration saved successfully.");
                 return Ok(());
             },
+            Commands::SaveRules { module, payload } => {
+                let json_bytes = (0..payload.len())
+                    .step_by(2)
+                    .map(|i| u8::from_str_radix(&payload[i..i + 2], 16))
+                    .collect::<Result<Vec<u8>, _>>()
+                    .context("Failed to decode hex payload")?;
+                let _: inventory::ModuleRules = serde_json::from_slice(&json_bytes)
+                    .context("Invalid rules JSON")?;
+
+                let rules_dir = std::path::Path::new("/data/adb/meta-hybrid/rules");
+                std::fs::create_dir_all(rules_dir)?;
+                
+                let file_path = rules_dir.join(format!("{}.json", module));
+                std::fs::write(file_path, json_bytes)?;
+                
+                println!("Rules for module '{}' saved.", module);
+                return Ok(());
+            },
             Commands::Storage => { 
                 storage::print_status()?; 
                 return Ok(()); 
@@ -225,12 +243,4 @@ fn run() -> Result<()> {
 
     log::info!(">> System operational. Mount sequence complete.");
     Ok(())
-}
-
-fn main() {
-    if let Err(e) = run() {
-        log::error!("!! Fatal Error: {:#}", e);
-        eprintln!("Fatal Error: {:#}", e);
-        std::process::exit(1);
-    }
 }
