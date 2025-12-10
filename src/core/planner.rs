@@ -21,6 +21,8 @@ pub fn generate(modules: &[Module], settings: &ModuleSettings) -> Result<MountPl
             let mode = settings.get_mode(&module.id, Some(partition));
             let source = module.source_path.join(partition);
             
+            let is_dir = source.is_dir();
+
             match mode {
                 MountMode::Magic => {
                     let target = PathBuf::from("/").join(partition);
@@ -31,10 +33,15 @@ pub fn generate(modules: &[Module], settings: &ModuleSettings) -> Result<MountPl
                     hymo_targets.push((source, target));
                 }
                 _ => {
-                    overlay_targets
-                        .entry(partition.to_string())
-                        .or_default()
-                        .push(source);
+                    if is_dir {
+                        overlay_targets
+                            .entry(partition.to_string())
+                            .or_default()
+                            .push(source);
+                    } else {
+                        let target = PathBuf::from("/").join(partition);
+                        magic_targets.push((source, target));
+                    }
                 }
             }
         }

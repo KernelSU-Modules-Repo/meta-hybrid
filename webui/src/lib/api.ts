@@ -55,16 +55,23 @@ const RealAPI = {
 
   saveConfig: async (config: AppConfig): Promise<void> => {
     if (!ksuExec) throw new Error("No KSU environment");
-    const jsonStr = JSON.stringify(config);
+
+    const configToSend = { ...config };
+    if (configToSend.tempdir === "") {
+        (configToSend as any).tempdir = null;
+    }
+
+    const jsonStr = JSON.stringify(configToSend);
     
     let bytes: Uint8Array;
     if (typeof TextEncoder !== 'undefined') {
       const encoder = new TextEncoder();
       bytes = encoder.encode(jsonStr);
     } else {
-      bytes = new Uint8Array(jsonStr.length);
-      for (let i = 0; i < jsonStr.length; i++) {
-        bytes[i] = jsonStr.charCodeAt(i) & 0xFF;
+      const utf8Str = unescape(encodeURIComponent(jsonStr));
+      bytes = new Uint8Array(utf8Str.length);
+      for (let i = 0; i < utf8Str.length; i++) {
+        bytes[i] = utf8Str.charCodeAt(i);
       }
     }
     
@@ -96,27 +103,35 @@ const RealAPI = {
     return [];
   },
 
-  // Updated to save granular settings
   saveModules: async (modules: Module[]): Promise<void> => {
     if (!ksuExec) throw new Error("No KSU environment");
 
-    // Convert flat Module array to ModuleSettings structure: { modules: { id: config } }
-    const settingsMap: Record<string, PartitionConfig> = {};
-    modules.forEach(m => {
-      settingsMap[m.id] = m.config;
-    });
+    const payloadObj = modules.map(m => ({
+        id: m.id,
+        config: m.config
+    }));
 
-    const payload = {
-      modules: settingsMap
-    };
-
-    const jsonStr = JSON.stringify(payload, null, 2);
-    // Escape single quotes for shell safety
-    const safeJson = jsonStr.replace(/'/g, "'\\''");
+    const jsonStr = JSON.stringify(payloadObj);
     
-    const settingsPath = "/data/adb/meta-hybrid/module_settings.json";
-    // Use simple echo to write file, ensuring directory exists
-    const cmd = `mkdir -p "$(dirname "${settingsPath}")" && echo '${safeJson}' > "${settingsPath}"`;
+    let bytes: Uint8Array;
+    if (typeof TextEncoder !== 'undefined') {
+      const encoder = new TextEncoder();
+      bytes = encoder.encode(jsonStr);
+    } else {
+      const utf8Str = unescape(encodeURIComponent(jsonStr));
+      bytes = new Uint8Array(utf8Str.length);
+      for (let i = 0; i < utf8Str.length; i++) {
+        bytes[i] = utf8Str.charCodeAt(i);
+      }
+    }
+    
+    let hexPayload = '';
+    for (let i = 0; i < bytes.length; i++) {
+      const hex = bytes[i].toString(16);
+      hexPayload += (hex.length === 1 ? '0' + hex : hex);
+    }
+
+    const cmd = `${PATHS.BINARY} save-modules --payload ${hexPayload}`;
     
     const { errno, stderr } = await ksuExec(cmd);
     if (errno !== 0) throw new Error(`Failed to save module settings: ${stderr}`);

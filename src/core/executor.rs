@@ -15,14 +15,26 @@ pub struct ExecutionResult {
     pub hymo_module_ids: Vec<String>,
 }
 
-fn extract_id(path: &Path) -> Option<String> {
-    path.parent()
-        .and_then(|p| p.file_name())
-        .map(|s| s.to_string_lossy().to_string())
+fn extract_module_root(path: &Path) -> Option<PathBuf> {
+    let mut current = path;
+    loop {
+        if current.join("module.prop").exists() {
+            return Some(current.to_path_buf());
+        }
+        match current.parent() {
+            Some(p) => current = p,
+            None => break,
+        }
+        if current.to_string_lossy().len() < 10 { 
+            break; 
+        }
+    }
+    path.parent().map(|p| p.to_path_buf())
 }
 
-fn extract_module_root(partition_path: &Path) -> Option<PathBuf> {
-    partition_path.parent().map(|p| p.to_path_buf())
+fn extract_id(path: &Path) -> Option<String> {
+    extract_module_root(path)
+        .and_then(|p| p.file_name().map(|s| s.to_string_lossy().to_string()))
 }
 
 struct OverlayOp {
@@ -79,18 +91,34 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
                         }
                     },
                     Err(e) => {
-                        log::error!("HymoFS failed for {}: {}. Queueing for Overlay.", module_id, e);
-                        pending_hymo_fallbacks.push((source.clone(), part_name));
+                        log::error!("HymoFS failed for {}: {}. Queueing for Overlay/Magic.", module_id, e);
+                        
+                        let relative_str = target.to_string_lossy();
+                        let clean_partition = relative_str.trim_start_matches('/').to_string();
+
+                        if source.is_dir() {
+                            pending_hymo_fallbacks.push((source.clone(), clean_partition));
+                        } else {
+                            if let Some(root) = extract_module_root(source) {
+                                magic_queue.push(root);
+                            }
+                        }
                     }
                 }
             }
         } else {
-            log::warn!("!! HymoFS requested but kernel support is missing. Falling back to Overlay.");
+            log::warn!("!! HymoFS requested but kernel support is missing. Falling back.");
             for (source, target) in &plan.hymo_targets {
-                let part_name = target.file_name()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "unknown".to_string());
-                 pending_hymo_fallbacks.push((source.clone(), part_name));
+                let relative_str = target.to_string_lossy();
+                let clean_partition = relative_str.trim_start_matches('/').to_string();
+                 
+                if source.is_dir() {
+                    pending_hymo_fallbacks.push((source.clone(), clean_partition));
+                } else {
+                    if let Some(root) = extract_module_root(source) {
+                        magic_queue.push(root);
+                    }
+                }
             }
         }
     }
@@ -110,12 +138,19 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
         }
 
         let target = format!("/{}", partition);
-        if Path::new(&target).exists() {
+        if Path::new(&target).is_dir() {
              overlay_ops.push(OverlayOp {
                 partition: partition.clone(),
                 target,
                 lowerdirs: lowerdirs.clone(),
             });
+        } else {
+             log::warn!("Skipping OverlayFS for '{}': Target is not a directory.", target);
+             for src in lowerdirs {
+                if let Some(root) = extract_module_root(src) {
+                    magic_queue.push(root);
+                }
+             }
         }
     }
 

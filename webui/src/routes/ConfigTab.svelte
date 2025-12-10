@@ -8,11 +8,11 @@
 
   let initialConfigStr = $state('');
   const isValidPath = (p: string) => !p || (p.startsWith('/') && p.length > 1);
-  let invalidModuleDir = $derived(!isValidPath(store.config.moduledir));
-  let invalidTempDir = $derived(store.config.tempdir && !isValidPath(store.config.tempdir));
+  let invalidModuleDir = $derived(store.config ? !isValidPath(store.config.moduledir) : false);
+  let invalidTempDir = $derived(store.config ? (store.config.tempdir && !isValidPath(store.config.tempdir)) : false);
 
   let isDirty = $derived.by(() => {
-    if (!initialConfigStr) return false;
+    if (!initialConfigStr || !store.config) return false;
     return JSON.stringify(store.config) !== initialConfigStr;
   });
 
@@ -25,34 +25,35 @@
   });
 
   function save() {
+    if (!store.config) return;
     if (invalidModuleDir || invalidTempDir) {
       store.showToast(store.L.config.invalidPath, "error");
       return;
     }
     store.saveConfig().then(() => {
-        initialConfigStr = JSON.stringify(store.config);
+        if (store.config) initialConfigStr = JSON.stringify(store.config);
     });
   }
   
   function reload() {
     store.loadConfig().then(() => {
-        initialConfigStr = JSON.stringify(store.config);
+        if (store.config) initialConfigStr = JSON.stringify(store.config);
     });
   }
 
   function resetTempDir() {
-    store.config.tempdir = "";
+    if (store.config) store.config.tempdir = "";
   }
 
   function toggle(key: keyof typeof store.config) {
-    if (typeof store.config[key] === 'boolean') {
+    if (store.config && typeof store.config[key] === 'boolean') {
       (store.config as any)[key] = !store.config[key];
     }
   }
 </script>
 
 <div class="config-container">
-  
+  {#if store.config}
   <section class="config-group">
     <div class="input-card">
       <div class="text-field-row" class:error={invalidModuleDir}>
@@ -194,6 +195,11 @@
       {/if}
     </div>
   </section>
+  {:else}
+    <div class="loading-placeholder">
+       <span class="loader"></span>
+    </div>
+  {/if}
 </div>
 
 <BottomActions>

@@ -15,8 +15,13 @@
   let initialModulesStr = $state('');
 
   onMount(() => {
-    load();
+    if (store.modules.length > 0 && !store.loading.modules) {
+        initialModulesStr = JSON.stringify(store.modules.map(m => m.config));
+    } else {
+        load();
+    }
   });
+
   function load() {
     store.loadModules().then(() => {
         initialModulesStr = JSON.stringify(store.modules.map(m => m.config));
@@ -28,6 +33,7 @@
     const current = JSON.stringify(store.modules.map(m => m.config));
     return current !== initialModulesStr;
   });
+
   function save() {
     store.saveModules().then(() => {
         initialModulesStr = JSON.stringify(store.modules.map(m => m.config));
@@ -40,6 +46,7 @@
     const matchFilter = filterType === 'all' || m.config.default_mode === filterType;
     return matchSearch && matchFilter;
   }));
+
   function toggleExpand(id: string) {
     expandedId = expandedId === id ? null : id;
   }
@@ -59,12 +66,18 @@
 
   function getPartitionMode(moduleId: string, partition: string): string {
       const module = store.modules.find(m => m.id === moduleId);
-      return module?.config.partitions[partition] || 'inherit';
+      // Fix: Add optional chaining to prevent crash if partitions dict is missing
+      return module?.config.partitions?.[partition] || 'inherit';
   }
 
   function setPartitionMode(moduleId: string, partition: string, mode: string) {
       const module = store.modules.find(m => m.id === moduleId);
       if (!module) return;
+
+      // Fix: Ensure partitions object exists
+      if (!module.config.partitions) {
+          module.config.partitions = {};
+      }
 
       if (mode === 'inherit') {
           delete module.config.partitions[partition];
@@ -139,9 +152,7 @@
             </div>
           </div>
           
-          <div class="mode-badge {mod.config.default_mode === 'magic' ? 'badge-magic' : mod.config.default_mode === 'hymo' ? 'badge-hymofs' : 'badge-auto'}"
-               style:background-color={mod.config.default_mode === 'hymo' ? 'var(--md-sys-color-primary-container)' : ''}
-               style:color={mod.config.default_mode === 'hymo' ? 'var(--md-sys-color-on-primary-container)' : ''}>
+          <div class="mode-badge {mod.config.default_mode === 'magic' ? 'badge-magic' : mod.config.default_mode === 'hymo' ? 'badge-hymofs' : 'badge-auto'}">
             {getModeLabel(mod.config.default_mode)}
           </div>
         </div>
