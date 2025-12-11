@@ -66,7 +66,7 @@ Meta-Hybrid Mount 的工作流程如下：
 | `partitions` | Array | `[]` | 额外的挂载分区列表（除 system/vendor 等内置分区外）。 |
 | `force_ext4` | Bool | `false` | 强制使用 `modules.img` 而不尝试 Tmpfs。 |
 | `enable_nuke` | Bool | `false` | 启用 "肉垫" 模式（清理 Sysfs 痕迹）。 |
-| `disable_umount` | Bool | `false` | 禁用命名空间分离（unmount namespace）。 |
+| `disable_umount` | Bool | `false` | 禁用 add_try_umount |
 
 ---
 

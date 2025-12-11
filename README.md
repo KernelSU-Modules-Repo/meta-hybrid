@@ -66,7 +66,7 @@ The configuration file is located at `/data/adb/meta-hybrid/config.toml`. You ca
 | `partitions` | Array | `[]` | List of extra partitions to mount (besides built-in ones like system/vendor). |
 | `force_ext4` | Bool | `false` | Force usage of `modules.img` without attempting Tmpfs. |
 | `enable_nuke` | Bool | `false` | Enable "Paw Pad" mode (Clean up Sysfs traces). |
-| `disable_umount` | Bool | `false` | Disable namespace separation (unmount namespace). |
+| `disable_umount` | Bool | `false` | Disable add_try_umount |
 
 ---
 
