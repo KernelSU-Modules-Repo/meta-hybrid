@@ -46,14 +46,14 @@ pub fn is_hymofs_active() -> bool {
     HymoFs::is_available()
 }
 
-pub fn setup(mnt_base: &Path, img_path: &Path, force_ext4: bool) -> Result<StorageHandle> {
+pub fn setup(mnt_base: &Path, img_path: &Path, force_ext4: bool, mount_source: &str) -> Result<StorageHandle> {
     if utils::is_mounted(mnt_base) {
         let _ = unmount(mnt_base, UnmountFlags::DETACH);
     }
     fs::create_dir_all(mnt_base)?;
 
     if !force_ext4 {
-        if try_setup_tmpfs(mnt_base)? {
+        if try_setup_tmpfs(mnt_base, mount_source)? {
             return Ok(StorageHandle {
                 mount_point: mnt_base.to_path_buf(),
                 mode: "tmpfs".to_string(),
@@ -64,8 +64,8 @@ pub fn setup(mnt_base: &Path, img_path: &Path, force_ext4: bool) -> Result<Stora
     setup_ext4_image(mnt_base, img_path)
 }
 
-fn try_setup_tmpfs(target: &Path) -> Result<bool> {
-    if utils::mount_tmpfs(target).is_ok() {
+fn try_setup_tmpfs(target: &Path, mount_source: &str) -> Result<bool> {
+    if utils::mount_tmpfs(target, mount_source).is_ok() {
         if utils::is_xattr_supported(target) {
             return Ok(true);
         } else {

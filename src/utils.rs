@@ -202,10 +202,10 @@ pub fn is_mounted<P: AsRef<Path>>(path: P) -> bool {
     false
 }
 
-pub fn mount_tmpfs(target: &Path) -> Result<()> {
+pub fn mount_tmpfs(target: &Path, source: &str) -> Result<()> {
     ensure_dir_exists(target)?;
     let data = CString::new("mode=0755")?;
-    mount("tmpfs", target, "tmpfs", MountFlags::empty(), data.as_c_str())
+    mount(source, target, "tmpfs", MountFlags::empty(), data.as_c_str())
         .context("Failed to mount tmpfs")?;
     Ok(())
 }

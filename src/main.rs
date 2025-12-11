@@ -182,7 +182,7 @@ fn run() -> Result<()> {
     let mnt_base = PathBuf::from(defs::FALLBACK_CONTENT_DIR);
     let img_path = Path::new(defs::BASE_DIR).join("modules.img");
     
-    let storage_handle = storage::setup(&mnt_base, &img_path, config.force_ext4)?;
+    let storage_handle = storage::setup(&mnt_base, &img_path, config.force_ext4, &config.mountsource)?;
     log::info!(">> Storage Backend: [{}]", storage_handle.mode.to_uppercase());
 
     let module_list = inventory::scan(&config.moduledir, &config)?;
