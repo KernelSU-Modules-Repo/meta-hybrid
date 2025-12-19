@@ -9,7 +9,7 @@ pub mod modules;
 use std::path::Path;
 use anyhow::Result;
 use crate::conf::config::Config;
-use crate::{defs, utils};
+use crate::utils;
 
 // --- Typestate States ---
 
@@ -32,6 +32,7 @@ pub struct Planned {
 
 pub struct Executed {
     pub handle: storage::StorageHandle,
+    #[allow(dead_code)]
     pub modules: Vec<inventory::Module>,
     pub plan: planner::MountPlan,
     pub result: executor::ExecutionResult,

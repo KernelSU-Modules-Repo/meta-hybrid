@@ -305,12 +305,14 @@ pub fn select_temp_dir() -> Result<PathBuf> {
     Ok(work_dir)
 }
 
+#[allow(dead_code)]
 pub fn cleanup_temp_dir(temp_dir: &Path) {
     if let Err(e) = remove_dir_all(temp_dir) {
         log::warn!("Failed to clean up temp dir {}: {:#}", temp_dir.display(), e);
     }
 }
 
+#[allow(dead_code)]
 pub fn ensure_temp_dir(temp_dir: &Path) -> Result<()> {
     if temp_dir.exists() {
         remove_dir_all(temp_dir).ok();
