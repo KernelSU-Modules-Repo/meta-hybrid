@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, HashSet},
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use anyhow::Result;
@@ -65,18 +66,33 @@ fn repair_rw_contexts() {
         let reference_path = Path::new("/").join(part);
 
         if part_dir.exists() && reference_path.exists() {
-            if let Err(e) = utils::copy_path_context(&reference_path, &part_dir) {
-                log::warn!("Failed to set context for {}: {}", part_dir.display(), e);
-            }
+            let status = Command::new("chcon")
+                .arg("-R")
+                .arg("--reference")
+                .arg(&reference_path)
+                .arg(&part_dir)
+                .status();
 
-            let upper_dir = part_dir.join("upperdir");
-            if upper_dir.exists() {
-                let _ = utils::copy_path_context(&part_dir, &upper_dir);
-            }
-
-            let work_dir = part_dir.join("workdir");
-            if work_dir.exists() {
-                let _ = utils::copy_path_context(&part_dir, &work_dir);
+            match status {
+                Ok(s) if s.success() => {
+                    log::debug!(
+                        "Fixed context for {} using reference {}",
+                        part_dir.display(),
+                        reference_path.display()
+                    );
+                }
+                _ => {
+                    let context = "u:object_r:system_file:s0";
+                    log::warn!(
+                        "chcon --reference failed, trying explicit context {}",
+                        context
+                    );
+                    let _ = Command::new("chcon")
+                        .arg("-R")
+                        .arg(context)
+                        .arg(&part_dir)
+                        .status();
+                }
             }
         }
     }
@@ -190,8 +206,6 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
                     op.target.display()
                 );
 
-                // Modified: Use add_merge_rule instead of inject_directory
-                // This leverages the kernel's ability to merge directories directly
                 match HymoFs::add_merge_rule(
                     &op.target.to_string_lossy(),
                     &mirror_base.to_string_lossy(),
@@ -210,9 +224,6 @@ pub fn execute(plan: &MountPlan, config: &config::Config) -> Result<ExecutionRes
                             op.module_id,
                             e
                         );
-                        // Optional: We could fallback to old inject_directory here if we wanted
-                        // backward compatibility with older kernels, but typically we assume
-                        // matching kernel module.
                         if let Some(root) = extract_module_root(&op.source) {
                             magic_queue.push(root);
                         }
