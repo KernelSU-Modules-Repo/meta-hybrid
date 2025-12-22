@@ -13,9 +13,7 @@
   import WinnowingTab from './routes/WinnowingTab.svelte';
   import './app.css';
   import './layout.css';
-  
-  const TABS = ['status', 'config', 'modules', 'logs', 'granary', 'winnowing', 'info'];
-  
+
   let activeTab = $state('status');
   let dragOffset = $state(0);
   let isDragging = $state(false);
@@ -23,6 +21,15 @@
   let touchStartX = 0;
   let touchStartY = 0;
   let isReady = $state(false);
+
+  let visibleTabs = $derived.by(() => {
+    const tabs = ['status', 'config', 'modules', 'logs', 'granary'];
+    if (store.conflicts.length > 0) {
+      tabs.push('winnowing');
+    }
+    tabs.push('info');
+    return tabs;
+  });
 
   function switchTab(id: string) {
     activeTab = id;
@@ -41,15 +48,12 @@
     const currentY = e.changedTouches[0].screenY;
     let diffX = currentX - touchStartX;
     const diffY = currentY - touchStartY;
-    
-    // Lock vertical scroll
     if (Math.abs(diffY) > Math.abs(diffX)) return;
     
     if (e.cancelable) e.preventDefault();
 
-    const currentIndex = TABS.indexOf(activeTab);
-    // Resistance at edges
-    if ((currentIndex === 0 && diffX > 0) || (currentIndex === TABS.length - 1 && diffX < 0)) {
+    const currentIndex = visibleTabs.indexOf(activeTab);
+    if ((currentIndex === 0 && diffX > 0) || (currentIndex === visibleTabs.length - 1 && diffX < 0)) {
       diffX = diffX / 3;
     }
     dragOffset = diffX;
@@ -59,20 +63,25 @@
     if (!isDragging) return;
     isDragging = false;
     const threshold = containerWidth * 0.33 || 80;
-    const currentIndex = TABS.indexOf(activeTab);
+    const currentIndex = visibleTabs.indexOf(activeTab);
     let nextIndex = currentIndex;
-
-    if (dragOffset < -threshold && currentIndex < TABS.length - 1) {
+    if (dragOffset < -threshold && currentIndex < visibleTabs.length - 1) {
       nextIndex = currentIndex + 1;
     } else if (dragOffset > threshold && currentIndex > 0) {
       nextIndex = currentIndex - 1;
     }
 
     if (nextIndex !== currentIndex) {
-      switchTab(TABS[nextIndex]);
+      switchTab(visibleTabs[nextIndex]);
     }
     dragOffset = 0;
   }
+
+  $effect(() => {
+    if (activeTab === 'winnowing' && !visibleTabs.includes('winnowing')) {
+      activeTab = 'granary';
+    }
+  });
 
   onMount(async () => {
     try {
@@ -82,7 +91,7 @@
     }
   });
 
-  let baseTranslateX = $derived(TABS.indexOf(activeTab) * -(100 / TABS.length));
+  let baseTranslateX = $derived(visibleTabs.indexOf(activeTab) * -(100 / visibleTabs.length));
 </script>
 
 <div class="app-root">
@@ -101,16 +110,18 @@
           ontouchcancel={handleTouchEnd}>
       <div class="swipe-track"
            style:transform={`translateX(calc(${baseTranslateX}% + ${dragOffset}px))`}
-           style:width={`${TABS.length * 100}%`}
+           style:width={`${visibleTabs.length * 100}%`}
            style:transition={isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 0.8, 0.5, 1)'}>
         
-        <div class="swipe-page" style:width={`${100 / TABS.length}%`}><div class="page-scroller"><StatusTab /></div></div>
-        <div class="swipe-page" style:width={`${100 / TABS.length}%`}><div class="page-scroller"><ConfigTab /></div></div>
-        <div class="swipe-page" style:width={`${100 / TABS.length}%`}><div class="page-scroller"><ModulesTab /></div></div>
-        <div class="swipe-page" style:width={`${100 / TABS.length}%`}><div class="page-scroller"><LogsTab /></div></div>
-        <div class="swipe-page" style:width={`${100 / TABS.length}%`}><div class="page-scroller"><GranaryTab /></div></div>
-        <div class="swipe-page" style:width={`${100 / TABS.length}%`}><div class="page-scroller"><WinnowingTab /></div></div>
-        <div class="swipe-page" style:width={`${100 / TABS.length}%`}><div class="page-scroller"><InfoTab /></div></div>
+        <div class="swipe-page" style:width={`${100 / visibleTabs.length}%`}><div class="page-scroller"><StatusTab /></div></div>
+        <div class="swipe-page" style:width={`${100 / visibleTabs.length}%`}><div class="page-scroller"><ConfigTab /></div></div>
+        <div class="swipe-page" style:width={`${100 / visibleTabs.length}%`}><div class="page-scroller"><ModulesTab /></div></div>
+        <div class="swipe-page" style:width={`${100 / visibleTabs.length}%`}><div class="page-scroller"><LogsTab /></div></div>
+        <div class="swipe-page" style:width={`${100 / visibleTabs.length}%`}><div class="page-scroller"><GranaryTab /></div></div>
+        {#if store.conflicts.length > 0}
+            <div class="swipe-page" style:width={`${100 / visibleTabs.length}%`}><div class="page-scroller"><WinnowingTab /></div></div>
+        {/if}
+        <div class="swipe-page" style:width={`${100 / visibleTabs.length}%`}><div class="page-scroller"><InfoTab /></div></div>
         
       </div>
     </main>
@@ -118,29 +129,3 @@
   {/if}
   <Toast />
 </div>
-
-<style>
-  .loading-container {
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    height: 100vh; 
-    flex-direction: column; 
-    gap: 16px;
-  }
-  .loading-text {
-    opacity: 0.6;
-    font-family: var(--md-ref-typeface-plain);
-  }
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--md-sys-color-surface-container-high, #e0e0e0);
-    border-top-color: var(--md-sys-color-primary, #6750a4);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-</style>
