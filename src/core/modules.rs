@@ -147,16 +147,18 @@ pub fn update_description(
         return;
     }
 
-    let mode_str = if storage_mode == "tmpfs" {
-        "Tmpfs"
-    } else {
-        "Ext4"
+    let mode_str = match storage_mode {
+        "tmpfs" => "Tmpfs",
+        "erofs" => "EROFS",
+        _ => "Ext4",
     };
-    let status_emoji = if storage_mode == "tmpfs" {
-        "🐾"
-    } else {
-        "💿"
+
+    let status_emoji = match storage_mode {
+        "tmpfs" => "🐾",
+        "erofs" => "🚀",
+        _ => "💿",
     };
+
     let nuke_str = if nuke_active {
         " | 肉垫: 开启 ✨"
     } else {
